@@ -1,0 +1,54 @@
+* Exercise 02 - Setup an SSH tunnel and use it as a socks proxy in a web Browser
+  - Description :: Setup a browser to use SSH based Socks Proxy tunnel. Create a tunnel from your laptop to the Lan VM. Finally verify that you, _and only you_, are able to reach your VM behind the firewall using this setup.
+
+
+* Solutions and Instructions
+** Configure a browser to use a socks proxy
+This section depends heavily on your browser and even on your browser version, alternatively you can use an extensions, see below.
+
+In order to properly start a SOCKS proxy server we need to identify the =$SOCKS_ADDR= and the =$SOCKS_PORT= where it will listen for connections to proxies on the tunnel.
+
+Given that the tunnel is setup on your laptop you can just make it listen on the loopback interface (=127.0.0.1=) and on a port of your choice from the high unprivileged port range, eg: =4444= or =8888=. Let's say we will use:
+
+#+begin_example
+$SOCKS_ADDR=127.0.0.1
+$SOCKS_PORT=4444
+#+end_example
+
+*** Using a browser extension (preferred choice)
+Jump [[https://addons.mozilla.org/en-US/firefox/addon/switchyomega/][here]], install the extension and confgiure a new entry similarly as explained for the method below.
+
+*** Configuring your browser
+The examples are for a modern version of Firefox.
+
+Optionally, you can create a profile in your preferred browser, for firefox starts with:
+#+begin_src sh
+firefox --no-remote --ProfileManager
+#+end_src
+
+In Firefox under the network setting add a socks proxy with the address the =$SOCKS_ADDR= and with the port the =$SOCKS_PORT= identified above.
+
+[[file:ff-socks.png]]
+
+In very recent version of firefox you will also need to set =network.proxy.allow_hijacking_localhost= to =true= in =about:config=, see [[https://bugzilla.mozilla.org/show_bug.cgi?id=1535581][https://bugzilla.mozilla.org/show_bug.cgi?id=1535581]]
+
+[[file:ff-settings.png]]
+
+** Launch the tunnel
+Launch an ssh connection with socks support. Read [[https://en.wikipedia.org/wiki/SOCKS][here]] to better understand what a Socks Proxy is and how it works.
+#+begin_src sh
+  ssh -D ${SOCKS_ADDR}:${SOCKS_PORT} -p LAB_VM_PORT disi@LAB_VM_URL
+#+end_src
+
+** Create a dummy service on the Lab VM
+The below simple snippet will expose a web server that shows the content of the file =index.html=.
+#+begin_src sh
+  mkdir ws
+  cd ws
+  echo "Hello from FCC Lab Web Server" > index.html
+  python3 -m http.server
+#+end_src
+
+Identify the exposed port (it should be the port =8000=) and open on your modified browser the following URL: http://localhost:8000.
+
+What do you see in the browser? What do you see in the terminal? Where are the connections coming from?

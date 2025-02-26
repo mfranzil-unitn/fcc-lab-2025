@@ -1,0 +1,38 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: author:t broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:nil
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+OPTIONS: timestamp:t title:t toc:t todo:t |:t
+#+TITLE: Fog and Cloud Computing 2025 - Lab
+#+AUTHOR: Matteo Franzil, Luis Augusto Dias Knob 
+#+EMAIL: matteo.franzil@unitn.it, luisaugusto.diasknob@unitn.it
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+* Lab Virtual Machine
+In order to simplify the creation of a portable environment on
+different Operating System and different hardware we leverage tools
+like:
+- [[https://www.vagrantup.com/][https://www.vagrantup.com/]]
+- [[https://www.virtualbox.org/][https://www.virtualbox.org/]]
+- [[https://www.ansible.com/]]
+- Others
+
+The Lab exercises are prepared to run on the Course Lab Environment provided to
+every enrolled student. You could try to run exercises on other systems (eg:
+your laptop) but I cannot guarantee the full compatibility.
+
+During first exercises you will learn howto create portable development
+environments by yourself, then for the following exercises I may provide you
+instructions or scripts to create base environments we will use on exercises.
+
+As a general rule, if the exercise folder contains only the =README.org=, you
+should just follow those instructions, while if it contains other files, then
+you need to change inside the folder and follow the steps from there as they are
+relative to the specific exercise.
+
+
+* Lab00 - Requirements
+- [[file:e00][Exercise 00 - Install required tools]]
+- [[file:e01][Exercise 01 - Generate and upload your SSH key]]
+- [[file:e02][Exercise 02 - Setup an SSH tunnel and use it as a socks proxy in a web Browser]]

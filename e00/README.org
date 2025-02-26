@@ -1,0 +1,81 @@
+* Exercise 00 - Install required tools
+  - Description :: Properly install all the required tools or ensure to have an alternative on your machine.
+
+      
+* Solutions and Instructions
+
+Suggestion: The following instructions are generic and not intended to be copied/pasted. You are not a robot: be smart and think what you are doing.
+
+** Install a Terminal (soft requirement)
+*Given that you can use the terminal of the remote Lab VM (already installed), having a terminal on your laptop is not a strict requirement but it may be useful to practice with the Unix Shell commands which will be used extensively in this lab.*
+
+*Windows*
+- Download and install Cmder from this link: [[https://cmder.app][https://cmder.app/]]. Choose the *Full* version not the Mini. For simplicity just extract the archive on your Desktop
+
+
+*Linux*
+- Use the terminal provided by your system
+
+
+*MacOS*
+- Use the terminal provided by your system or install [[https://iterm2.com/][iTerm2]]
+
+** Install OpenSSH (strict requirement)
+*Windows*
+- It is already included in Cmder, so no need to install manually if you have Cmder
+- Alternatively, you could opt for Putty, see this page: https://www.putty.org/
+
+
+*Linux*
+- It should be already provided in your system, otherwise use your package manager to install it.
+  
+  Debian-based example
+  #+begin_src sh
+    apt search ssh # Search for ssh in available packages list
+    apt install ssh -y
+  #+end_src
+
+  Test with
+  #+begin_src sh
+    man ssh
+  #+end_src
+
+*MacOS*
+- It should be already provided in your system, otherwise use your package manager to install it.
+  
+  Brew enabled system example
+  #+begin_src sh
+    brew search ssh # Search for ssh in available packages list
+    brew install openssh
+  #+end_src
+
+  Test with
+  #+begin_src sh
+    man ssh
+  #+end_src
+
+** Install a Text editor (soft requirement)
+*Given that you can use (or install) any textual editor of your choice on the remote Lab VM, having a proper source code editor on your laptop is not a strict requirement but it may be useful to modify files locally, learn how-to track different versions and finally move them on the Lab VM using git*
+
+
+*Windows*
+- Install [[https://notepad-plus-plus.org/downloads/][Notepad++]], [[https://www.sublimetext.com/3][Sublime Text]] o use your preferred one
+
+*Linux*
+- Install [[https://www.sublimetext.com/3][Sublime Text]] or use your preferred one
+
+*MacOS*
+- Install [[https://www.sublimetext.com/3][Sublime Text]] or use your preferred one
+
+** Install git (soft requirement)
+*Given that you can use git directly on the remote Lab VM, having it on your laptop is not a strict requirement but it may be useful to modify files locally, learn how-to track different versions and finally move them on the Lab VM using git*
+
+*Windows*
+- It is already included in Cmder, so no need to install manually
+- Refer to this page: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
+
+*Linux*
+- Adapt /Install OpenSSH/ instructions above
+
+*MacOS*
+- Adapt /Install OpenSSH/ instructions above

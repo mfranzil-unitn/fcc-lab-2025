@@ -1,0 +1,103 @@
+* Exercise 01 - Generate and upload your SSH key
+  - Description :: If you do not have already one, generate an ssh key and save it on your laptop. Then move the key on the lab virtual-machine in order to use public/private authentication. Check that you are able to login on the lab VM without typing your password every time.
+
+      
+* Solutions and Instructions
+Few important details about SSH Public Key Authentication:
+1) It is useful because you avoid typing a password every-time you want to connect to your Lab VM
+2) It is more robust, secure and reliable than using/typing/storing a password
+3) SSH public/private key-pair are just two plain-text files
+4) Public key is stored on the server (your Lab VM)
+5) Private key is stored (better if encrypted) on the client (your laptop)
+
+
+You can find [[https://www.ssh.com/academy/ssh/public-key-authentication][here]] more information which I suggest everyone to read carefully.
+
+
+** Generate an ssh key
+*From your laptop* generate an ssh key-pair, for example using the below self explaining command.
+  
+The passphrase to protect your key is optional, this course is not about real word security, my suggestion (if you know what you are doing, or if you want to learn something new by yourself) is to set up and use an ssh agent, but this is up to you.
+
+You must backup (and be able to restore) your private key.
+
+#+begin_src sh
+ssh-keygen -t rsa -b 4096 -f fcc-lab.key
+#+end_src
+
+This will generate two files: the private and public keys
+#+begin_example
+fcc-lab.key
+fcc-lab.key.pub
+#+end_example
+
+_If this is your first and unique ssh identity_, you can use it as default by copying on the special path (=${HOME}/.ssh/=) and renaming using the prefix =id_rsa= , _otherwise_ you can just copy the files into =${HOME}/.ssh/= with their original filenames.
+
+On UNIX system
+#+begin_src sh
+mv -i fcc-lab.key "${HOME}/.ssh/id_rsa"
+#+end_src
+
+It is not mandatory, but to keep things clean, copy also the public key
+#+begin_src sh
+mv -i fcc-lab.key.pub "${HOME}/.ssh/id_rsa.pub"
+#+end_src
+
+In other systems (eg: Windows) the default path may be different, try with [[https://www.scammell.co.uk/2017/09/18/ssh-keygen-best-practice-for-cmder/][this]] or store the keys in a place in order to be confortable to use every time you login on the lab VM.
+
+Study a bit the ssh command line =-i= flag and the =IdentityFile= config option in order to be able to use the key if it is not used by default by your SSH client (for example if, after setting up the key on the server, you are still not able to login without a password).
+
+Here is an example, of using the command line flag:
+#+begin_src sh
+  ssh -i $PATH_TO_YOUR_KEYS/fcc-lab.key $USER@$SERVER
+#+end_src
+
+If you do not have access to =ssh-keygen=, use any other tool that can generate an ssh key and then convert it into the openssh rsa format and add the appropriate comment manually.
+
+** Upload the key on the Lab VM
+Upload the public part of the key into lab VM. There are multiple ways to do that.
+
+*** Manually
+Output the public part of the key into the clipboard
+#+begin_src sh
+cat fcc-lab.key.pub
+#+end_src
+
+SSH into the Lab VM
+#+begin_src sh
+  ssh -p LAB_VM_PORT disi@LAB_VM_URL
+#+end_src
+
+Copy the public key and, using an editor, append it on a new line in the =~/.ssh/authorized_keys= file, then save and exit (Read [[https://www.cyberciti.biz/faq/linux-unix-vim-save-and-quit-command/][this]] if you never used vim editor)
+#+begin_src sh
+vim ~/.ssh/authorized_keys
+#+end_src
+
+*** Using an home-made trick
+Use a combination of =pipe=, =cat= and =bash output redirect= to append the content of a file on your local machine to another file on the remote machine
+#+begin_src sh
+cat fcc-lab.key.pub | ssh -p LAB_VM_PORT  disi@LAB_VM_URL 'cat >> ~/.ssh/authorized_keys'
+#+end_src
+
+*** Using a proper SSH tool
+Use the =ssh-copy-id= tool, which is smarted and does a check before adding the key which is better in respect to the previous proposed method
+#+begin_src sh
+ssh-copy-id -p LAB_VM_PORT -i $PATH_TO_YOUR_KEYS/fcc-lab.key disi@LAB_VM_URL
+#+end_src
+
+** Check if you are able to login wihtout password
+Simply use the login command, the lab VM should now ask you for a password
+#+begin_src sh
+ssh -p LAB_VM_PORT disi@LAB_VM_URL
+#+end_src
+
+or with a more sophisticated way
+
+#+begin_src sh
+ssh -p LAB_VM_PORT disi@LAB_VM_URL -n && echo OK || echo KO
+#+end_src
+
+*Remember:* If the ssh key is not in a default location your SSH client may not be able to use it so inform it using the =-i= flag, specifying the path of the private key file
+#+begin_src sh
+ssh -i fcc-lab.key -p LAB_VM_PORT disi@LAB_VM_URL
+#+end_src

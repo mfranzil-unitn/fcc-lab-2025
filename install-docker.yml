@@ -1,0 +1,18 @@
+---
+# File: install-docker.yml
+
+- name: Install the docker package
+  apt:
+    pkg:
+    - docker.io
+
+- name: Install the docker-compose package
+  apt:
+    pkg:
+    - docker-compose
+
+- name: Allow user vagrant to use Docker
+  user:
+    name: vagrant
+    groups: "docker"
+    append: yes

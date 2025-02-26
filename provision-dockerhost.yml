@@ -1,0 +1,38 @@
+---
+# File: provision-dockerhost.yml
+
+- hosts: all
+  become: true
+
+  tasks:
+  - name: Upgrade the OS (apt-get dist-upgrade)
+    apt:
+      upgrade: dist
+
+  - name: Run the equivalent of "apt-get update" as a separate step
+    apt:
+      update_cache: yes
+
+  - name: Install required packages
+    apt:
+      pkg:
+      - htop
+      - snapd
+      - figlet
+      - jq
+
+  - name: Install yq via snap
+    snap:
+      name:
+      - yq
+
+  - name: Add a figlet customisation to our login
+    ansible.builtin.lineinfile:
+      path: /home/vagrant/.bashrc
+      line: figlet My docker-host
+      create: yes
+
+# Uncomment the following lines if you want also install docker on your target host
+  # - name: Include tasks for installing docker
+  #   include_tasks:
+  #    file: "install-docker.yml"
