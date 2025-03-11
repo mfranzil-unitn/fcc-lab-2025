@@ -1,0 +1,20 @@
+---
+# File: provision.yml - Install an apache2 web-server
+
+- hosts: all
+  become: true
+
+  tasks:
+  - name: Upgrade the OS (apt-get dist-upgrade)
+    apt:
+      upgrade: dist
+
+  - name: Run the equivalent of "apt-get update" as a separate step
+    apt:
+      update_cache: yes
+
+  - name: Install apache2
+    apt:
+      pkg:
+      - apache2
+      - lynx

@@ -1,0 +1,68 @@
+* Exercise 07 - Deploy a webserver and access the main page via a browser
+  - Description :: Provision a Virtual Machine using Vagrant as you did in [[file:../e06][e06]]. This time you should install an =Apache2 Web Server= on the VM. Moreover, once the new service is installed you must check if it is working: first via CLI inside the VM and then using a browser from your laptop. Is the laptop allowed to reach the VM using the SSH Socks Proxy configured so far?
+
+* Solutions and Instructions
+** Deploy and Provision the VM
+Read the Ansible playbook: [[file:provision.yml][provision.yml]]
+
+Deploy and provision the VM
+#+begin_src sh
+  vagrant up
+#+end_src
+
+** Check the connection from inside the Nested VM (guest)
+Check inside the guest if the webserver is running
+#+begin_src sh
+  vagrant ssh
+  lynx http://localhost
+#+end_src
+
+** Check the connection from inside the Lab VM (host)
+Check from the Lab VM (host) if the webserver is running
+#+begin_src sh
+  exit
+  curl http://localhost
+#+end_src
+
+You cannot reach the Apache webserver from the Lab VM (host) directly because the service is running inside the *Nested VM (guest)*  which is isolated from the *Lab VM (host)*
+
+*** Expose a service running in the Nested VM (guest) on the host
+Forward the port =80= in the guest on a desired (=6666=) port on the host to expose apache service outside the nested VM.
+#+begin_src sh
+vagrant ssh -- -L 6666:localhost:80
+#+end_src
+As soon as the above channel stays open, apache2 will be available from the Lab VM (host)
+
+Open another terminal and check
+#+begin_src sh
+  curl http://localhost:6666
+#+end_src
+
+Of course we cannot set up this thing manually for every service, we need to find a better way. Let's try with the proxied browser.
+
+** Check the connection from a proxied browser in your laptop
+Check from your laptop (host) if the webserver is running.
+
+From the (proxied) browser (in your laptop) open the browser and visit =http://localhost=.
+
+You cannot reach the Apache webserver from the socks tunnel because the service is running inside the *Nested VM (guest)* while the tunnel is terminating in the *Lab VM (host)*. Moreover we have already seen that the VM is isolated.
+
+*** Expose a service running in any Nested VM (guest) on the proxied browser
+We need to terminate the tunnel into the Nested VM, so we need a two step connection:
+
+1) The first will connect a local port on the laptop to a port on the host where we will start the tunnel
+2) The second will start the SOCKS proxy tunnel from the Lab VM (host) into the Nested VM (guest)
+3) With 1) and 2) ready we create a SOCKS tunnel terminating into the desired Nested VM
+
+Connect to the Lab VM with this command for step 1)
+#+begin_src sh
+  ssh -L 4444:localhost:4444 -p $LAB_VM_PORT disi@$LAB_VM_URL
+#+end_src
+
+Connect to the desired guest with this command for step 2)
+#+begin_src sh
+  cd fcc-lab-2023/e07/
+  vagrant ssh -- -D 4444
+#+end_src
+
+As soon as the above channels stay open, apache2 will be available from the browser, give it a try. You can access it by visiting =http://localhost:4444= in your browser.

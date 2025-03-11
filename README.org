@@ -4,11 +4,12 @@
 #+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
 #+OPTIONS: timestamp:t title:t toc:t todo:t |:t
 #+TITLE: Fog and Cloud Computing 2025 - Lab
-#+AUTHOR: Matteo Franzil, Luis Augusto Dias Knob 
+#+AUTHOR: Matteo Franzil, Luis Augusto Dias Knob
 #+EMAIL: matteo.franzil@unitn.it, luisaugusto.diasknob@unitn.it
 #+LANGUAGE: en
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 25.1.1 (Org mode 9.0.5)
 * Lab Virtual Machine
 In order to simplify the creation of a portable environment on
 different Operating System and different hardware we leverage tools
@@ -36,3 +37,9 @@ relative to the specific exercise.
 - [[file:e00][Exercise 00 - Install required tools]]
 - [[file:e01][Exercise 01 - Generate and upload your SSH key]]
 - [[file:e02][Exercise 02 - Setup an SSH tunnel and use it as a socks proxy in a web Browser]]
+* Lab01 - Reproducible and portable environments (20250312)
+- [[file:e03][Exercise 03 - Start and Check your 1st Environment]]
+- [[file:e04][Exercise 04 - Customise and Share the Environment]]
+- [[file:e05][Exercise 05 - Advanced deployment: Provision with Vagrant and Configure with Ansible]]
+- [[file:e06/][Exercise 06 - Learn how-to manage virtual machines on your lab VM]]
+- [[file:e07][Exercise 07 - Deploy a webserver and access the main page via a browser]]

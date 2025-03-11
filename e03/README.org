@@ -1,0 +1,116 @@
+* Exercise 03 - Start and Check your 1st Environment
+  - Description :: Start to provision a Virtual Machine using Vagrant. Look at the log file and follow steps specified in the provision script. Once ready connect with the Virtual Machine. Finally try using an external provisioning script, explore the special =/vagrant= folder and the connection details.
+     
+* Solutions and Instructions
+
+Suggestion: The following instructions are generic and not intended to be copied/pasted. You are not a robot: be smart and think what you are doing.
+
+** Create and provision the virtual machine
+From the root of the repository you should first move into the exercise folder: =e03=
+#+begin_src sh
+cd e03
+#+end_src
+
+Tell Vagrant to bring up your environment
+#+begin_src sh
+vagrant up
+#+end_src
+
+Look carefully at the logs, open the =Vagrantfile= and try to understand steps in the provisioning script. Every =Vagrantfile= defines a VM.
+
+** Connect to the virtual machine
+#+begin_src sh
+vagrant ssh
+#+end_src
+
+Check if the package =figlet= has been installed ;D
+
+** Use external provisioning script (optional)
+The path where the =Vagrantfile= is located define the development environment which is reflected by default into the VM under the =/vagrant= special folder.
+
+Developers usually create a =Vagrantfile= in the root of the project they are developing so as to have all the project files automatically in synced across the HOST and the VM.
+#+begin_example
+my-hello-world-app
+|--Vagrantfile
+|--hello-world.py
+|--provision
+   |--provision.sh
+#+end_example
+
+
+This works because Vagrant, by default, will mount the directory where the =Vagrantfile= is present in the Virtual Machine under =/vagrant=.
+
+This will allow us also to use a dedicated provisioning script, see the =provision= [[file:provision][folder]] for details.
+
+Of course you should be able to run =vagrant up= from the =provision= folder and get the very same result as before. Note: in some cases this will not work if =vbox guest additions= have not been installed in the VM. more info:
+- https://www.vagrantup.com/docs/synced-folders
+- https://www.virtualbox.org/manual/ch04.html
+
+** Explore the special /vagrant folder
+As anticipated previously, Vagrant mounts automatically the file-system =path= where the =Vagrantfile= is saved inside a special =/vagrant= folder in the corresponding VM. Let's try to play a little bit with it.
+
+Look at the files in the =e03= folder
+#+begin_src sh
+  cd e03
+  ls -la
+#+end_src
+
+Now enter in the VM and move to the =/vagrant= folder
+#+begin_src sh
+  vagrant ssh
+  cd /vagrant
+#+end_src
+
+Inspect the files and then create a new file
+#+begin_src sh
+  ls -la
+  echo "I wrote this file inside the VM" > ./vm-file.txt
+  ls -la
+#+end_src
+
+Exit the VM and then look again in the =e03= folder
+#+begin_src sh
+  exit
+  ls -la
+  cat vm-file.txt
+#+end_src
+
+As you can see, the files are accessible from the host too, because the host folder has been mounted by Vagrant inside the VM. This allows many useful use-cases that we will not cover today. If you are curious look at the mounting point
+#+begin_src sh
+  vagrant ssh
+  mount | grep vagrant
+#+end_src
+
+** Mount another folder of your choice (optional)
+To manually mount a shared folder in the VM you should first create the VirtualBox shared folder (let's call it =shared=) in the host, check [[https://docs.oracle.com/en/virtualization/virtualbox/6.0/user/vboxmanage-sharedfolder.html][here]] for the right command to use.
+
+Then you can use the below command in the VM
+#+begin_src sh
+  mkdir ~/shared
+  sudo mount -t vboxsf shared ~/shared
+#+end_src
+
+** Explore connection details
+We can use =vagrant ssh= to connect to our VM without using a password: =Vagrant= + =VirtualBox= hide everything behind the scenes. Let's take a look at how things work.
+
+Find out the SSH connection details
+#+begin_src 
+vagrant ssh-config
+#+end_src
+
+Make them environment variables
+#+begin_src sh
+  for i in `vagrant ssh-config | sed 's/  //g' | sed 's/ /=/g' | tail -n +2`; do
+      eval $i;
+  done
+#+end_src
+
+Manually connect to the Virtual Machine
+#+begin_src sh
+  ssh $User@$HostName -p $Port -i $IdentityFile
+#+end_src
+
+VM settings are cached in the current folder, where =Vagrantfile= is, so every Vagrant Virtual Machine is configured relatively to this path. Changing the path of a Vagrant VM is not a good idea if you do not use the right steps and modify every reference in the settings, so keep it simple and avoid it during the lab.
+#+begin_src sh
+  ls -R .vagrant/
+#+end_src

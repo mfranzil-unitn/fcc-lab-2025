@@ -1,0 +1,91 @@
+* Exercise 06 - Learn how to manage virtual machines on your lab VM
+  - Description :: VirtualBox and Vagrant are useful tools but could go out of sync if you delete the reference of a =Vagrant= VM without deleting the VM itself from VirtualBox or vice-versa. Learn how to use the CLI of these tools in order to keep your Lab VM tidy.
+
+* Solutions and Instructions
+
+** View vagrant environments using CLI
+List all vagrant environments present in the system
+#+begin_src sh
+  vagrant global-status
+#+end_src
+
+If you find invalid entries, for example environments that you have deleted on the file-system, you can prune them with
+#+begin_src sh
+vagrant global-status --prune
+#+end_src
+
+Suspend a VM from Vagrant
+#+begin_src sh
+vagrant suspend $vagrant_vm_id
+#+end_src
+
+Destroy a VM from Vagrant
+#+begin_src sh
+vagrant destroy $vagrant_vm_id
+#+end_src
+
+** View VirtualBox VMs using CLI
+List all VMs
+#+begin_src sh
+vboxmanage list vms
+#+end_src
+
+List only running VMs
+#+begin_src sh
+vboxmanage list runningvms
+#+end_src
+
+Delete a VM
+#+begin_src sh
+vboxmanage unregistervm $VM_ID
+#+end_src
+
+Check other CLI commands
+#+begin_src sh
+vboxmanage --help | less
+#+end_src
+
+** Check for inconsistencies between Vagrant and Virtualbox
+You can list environments and VMs using the above commands and look for inconsistencies, see below:
+
+#+begin_src sh
+vboxmanage list vms
+#+end_src
+
+#+begin_example
+disi@ML-RefVm-63490:~/fcc-lab/e05$ vboxmanage list vms
+"e03_default_1681569202678_94387" {be60f562-3d41-40b8-bbf4-07b94cc8a505}
+"e05_default_1682958130734_2415" {09b59f3b-b76b-4759-8a54-b15e566ca661}
+#+end_example
+
+#+begin_src sh
+vagrant global-status
+#+end_src
+
+#+begin_example
+disi@ML-RefVm-63490:~/fcc-lab/e05$ vagrant global-status
+id       name    provider   state   directory
+------------------------------------------------------------------------
+019c8c8  default virtualbox running /home/disi/fcc-lab/e05
+
+The above shows information about all known Vagrant environments
+on this machine. This data is cached and may not be completely
+up-to-date (use "vagrant global-status --prune" to prune invalid
+entries). To interact with any of the machines, you can go to that
+directory and run Vagrant, or you can use the ID directly with
+Vagrant commands from any directory. For example:
+"vagrant destroy 1a2b3c4d"
+#+end_example
+
+As you can see from the above output, we have two VMs from VirtualBox: =e03= and =e05= but only one environment from Vagrant. This is because the VM is still present but its Vagrant reference may have been lost or deleted.
+
+You can reconcile this by removing the un-referenced VirtualBox VM with the following command (for the specific example):
+#+begin_src sh
+vboxmanage unregistervm e03_default_1681569202678_94387
+#+end_src
+
+*IMPORTANT:*
+
+*As a general rule keep only VMs that you are currently using for the specific exercises in running state, otherwise you will gradually increase the amount of used resources and easily jump into errors during the following exercises.*
+
+*So on time to time perform a global check and suspend or destroy those not needed.*

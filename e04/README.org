@@ -1,0 +1,70 @@
+* Exercise 04 - Customise and Share the Environment 
+  - Description :: Modify the provisioning script and create a customized new Virtual Machine. Share the environment with a teammate (could be done also with different OS) and test if the environment is portable as expected. Finally look at the running VMs and clear how to clear them.
+  - Note :: If you are already sharing the VM with a colleague, you are set; else, start finding a colleague to share the VM with.
+      
+* Solutions and Instructions
+
+** Modify the Virtual Machine
+You can modify the =Vagrantfile= to customise the creation instructions, for example to reserve less memory 
+#+begin_src yaml
+vb.memory = "1024"
+#+end_src
+
+Or you can modify the provisioning instructions, and install new software
+#+begin_src sh
+DEBIAN_FRONTEND=noninteractive sudo apt-get install mysql-server -y
+#+end_src
+
+or add a new user
+#+begin_src sh
+sudo useradd -p $(openssl passwd -1 password) fcc
+#+end_src
+
+/Are you curious about the above OpenSSL command? See [[https://unix.stackexchange.com/a/511017][link1]] and [[https://asecuritysite.com/openssl/passwds][link2]]/
+
+** Share the new VM
+*Anyone that want to share a modified Vagrantfile with me ??? See my email in the slides*
+
+You just need to send the =Vagrantfile=. For more complex environments, containing more files, you can create an archive or even better save them in git and publish on a remote repository.
+
+Your teammate need just to run
+#+begin_src sh
+vagrant up
+#+end_src
+
+** Test on your teammate lab
+Test on the destination lab using =vboxmanage= CLI to check the modified RAM
+#+begin_src sh
+  vboxmanage list vms
+  vboxmanage showvminfo $VM_ID | less
+#+end_src
+
+Test on the destination lab if the =mysql-server= service is present
+#+begin_src sh
+  vagrant ssh
+  systemctl status mysql.service
+#+end_src
+
+Test on the destination lab if the new user is present
+#+begin_src sh
+  sudo -s
+  su fcc
+  whoami
+#+end_src
+
+** Inspect the running Vagrant VMs
+You can check the status of the current Vagrant VM (the one referring to the =Vagrantfile= in the current directory) with
+#+begin_src sh
+  vagrant status
+#+end_src
+
+You can also look at all the vagrant VMs running in the host with
+#+begin_src sh
+  vagrant global-status
+#+end_src
+
+Finally, delete a Vagrant VM and check again the global status
+#+begin_src sh
+  vagrant destroy
+  vagrant global-status
+#+end_src

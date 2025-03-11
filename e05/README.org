@@ -1,0 +1,56 @@
+* Exercise 05 - Advanced deployment: Provision with Vagrant and Configure with Ansible
+  - Description :: Provision a Virtual Machine using Vagrant as you did in previous exercises. This time the provisioner in not of type =shell= but of type =Ansible=, so first look at the =Vagrantfile= and then at the =provision.yml= file and try to understand what is going on this time.
+
+Provision the VM using this new system multiple times, check the VM and inspect the VirtualBox VMs using CLI.
+
+* Solutions and Instructions
+Of course update the repository on your lab VM, if not already done
+#+begin_src sh
+  cd FCC_REPO_FOLDER
+  git pull
+#+end_src
+** Provision
+As usual, provision with Vagrant and look at the output
+#+begin_src sh
+  cd e05
+  vagrant up
+#+end_src
+
+When finished, provision again and look at the output
+#+begin_src sh
+vagrant provision
+#+end_src
+
+** Check the new virtual-machine
+#+begin_src sh
+vagrant ssh
+#+end_src
+
+** Modify the Ansible recipe and provision again
+Using an editor of your choice, add =mysql-client= at the list of packages to be installed in =provision.yml= and save.
+
+#+begin_example
+diff --git a/e05/provision.yml b/e05/provision.yml
+index 5d8ae64..660cf9c 100644
+--- a/e05/provision.yml
++++ b/e05/provision.yml
+@@ -19,6 +19,8 @@
+       - htop
+       - snapd
+       - figlet
++      - mysql-client
+
+   - name: Install yq via snap
+     snap:
+#+end_example
+
+Provision again
+#+begin_src sh
+  vagrant provision
+#+end_src
+
+Check that the new package has been installed
+#+begin_src sh
+    vagrant ssh
+    mysql --version
+#+end_src

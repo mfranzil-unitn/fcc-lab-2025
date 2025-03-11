@@ -1,0 +1,32 @@
+---
+# File: provision.yml - Example fcc e06 provision with vagrant and deploy with ansible
+
+- hosts: all
+  become: true
+
+  tasks:
+  - name: Upgrade the OS (apt-get dist-upgrade)
+    apt:
+      upgrade: dist
+
+  - name: Run the equivalent of "apt-get update" as a separate step
+    apt:
+      update_cache: yes
+
+  - name: Install required packages
+    apt:
+      pkg:
+      - htop
+      - snapd
+      - figlet
+
+  - name: Install yq via snap
+    snap:
+      name:
+      - yq
+
+  - name: Add a figlet customisation to our login
+    ansible.builtin.lineinfile:
+      path: /home/vagrant/.bashrc
+      line: figlet FCC Course, by Ansible
+      create: yes
