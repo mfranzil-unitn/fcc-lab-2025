@@ -1,0 +1,64 @@
+* Exercise 11 – Prepare the cluster from an admin and user point of view
+   - Description :: Prepare the cluster to host a custom virtual-machine.
+
+    As administrator of the cluster create the proper images of operating system the user should be allowed to use. While as cluster user prepare a security-group and a keypair to use with a web-server instance.
+* Solutions and Instructions
+
+** Operate as administrator
+Login as admin on project admin
+#+begin_src sh
+source /vagrant/accrc/admin-admin-openrc.sh
+#+end_src
+
+Download and create an image for Debian 10. Your users will be allowed to create virtual-machines starting from that image
+#+begin_src sh
+wget -P /var/tmp -c http://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.qcow2
+#+end_src
+
+Create the image and mark it as public so as to make it available to all other tenants in their projects
+#+begin_src sh
+openstack image create --disk-format qcow2 --container-format bare --public --file /var/tmp/debian-10-openstack-amd64.qcow2 debian-10
+#+end_src
+
+** Operate as normal user
+Login as demo on project demo
+#+begin_src sh
+source /vagrant/accrc/demo-demo-openrc.sh
+#+end_src
+
+Create a security group to allow SSH access to the new servers
+#+begin_src sh
+openstack security group create ssh-in
+#+end_src
+
+Create the proper allowed rule int he security group =ssh-in=
+#+begin_src sh
+openstack security group rule create ssh-in --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0
+#+end_src
+
+Create also a security group for a server which exposes a web service on port =8000=
+#+begin_src sh
+openstack security group create web-in
+#+end_src
+
+Create the proper allowed rule int he security group =web-in=
+#+begin_src sh
+openstack security group rule create web-in --protocol tcp --dst-port 8000:8000 --remote-ip 0.0.0.0/0
+#+end_src
+
+Generate a ssh key and use it for the keypair
+#+begin_src sh
+ssh-keygen -t rsa -b 4096 -f "${HOME}"/.ssh/id_rsa
+#+end_src
+
+
+Create the keypair
+#+begin_src sh
+openstack keypair create --public-key "${HOME}/.ssh/id_rsa.pub" demo_keypair
+#+end_src
+
+
+List all the keypairs
+#+begin_src sh
+openstack keypair list
+#+end_src

@@ -1,0 +1,126 @@
+* Exercise 10 – Explore API and CLI of your OpenStack cluster
+
+  - Description :: Using the OpenStack CLI explore the most important service by querying the relative API. Fortunately the CLI simplify our life by summarizes the actions available though the OpenStack APIs into very simple commands and sub-commands.
+
+* Solutions and Instructions
+** Start using the openstack CLI
+Login into your devstack VM
+#+begin_src sh
+vagrant ssh -- -D $SOCKS_PORT
+#+end_src
+
+Have a look at the openstack CLI help
+#+begin_src sh
+openstack help | less
+#+end_src
+
+*Note:* if you get some nasty warning from =pyhton= when using the OpenStack CLI, you could suppress them with:
+#+begin_src sh
+export PYTHONWARNINGS="ignore"
+#+end_src
+
+Now look at all the openstack CLI commands
+#+begin_src sh
+openstack command list | less
+#+end_src
+ 
+** Understand authentication and source the openrc files to get access
+In the =/vagrant= folder there are three =openrc= files used to setup authenticate your OpenStack =CLI= to the OpenStack API.
+
+See content of the =openrc= files when connecting as different users and project
+#+begin_src sh
+diff /vagrant/accrc/admin-admin-openrc.sh /vagrant/accrc/admin-demo-openrc.sh
+diff /vagrant/accrc/admin-admin-openrc.sh /vagrant/accrc/demo-demo-openrc.sh
+#+end_src
+
+Login as =admin= o project =admin= /(Tip: you can find the password here =tail -n 16 /opt/stack/logs/stack.sh.log=)/
+#+begin_src sh
+source /vagrant/accrc/admin-admin-openrc.sh
+#+end_src
+
+List the catalog and see the various API endpoints
+#+begin_src sh
+openstack catalog list
+#+end_src
+
+Now look at the detail of the Nova component
+#+begin_src sh
+openstack catalog show nova
+#+end_src
+
+** Explore Keystone service
+List all users
+#+begin_src sh
+openstack user list
+#+end_src
+
+Get details for a user
+#+begin_src sh
+openstack user show demo
+#+end_src
+
+List all projects
+#+begin_src sh
+openstack project list
+#+end_src
+
+Get the resource quotas for the =demo= project
+#+begin_src sh
+openstack quota show demo
+#+end_src
+
+** Explore Nova and Glance service
+Explore the reserved workload in your cluster
+/Why reserved and not "running" workload?/
+#+begin_src sh
+openstack server list
+#+end_src
+
+Try again with the =--all= flag
+#+begin_src sh
+openstack server list
+#+end_src
+
+Explore available flavors
+#+begin_src sh
+openstack flavor list
+#+end_src
+
+Explore available images
+#+begin_src sh
+openstack image list
+#+end_src
+
+** Explore Neutron service
+Explore list of networks in our cluster
+#+begin_src sh
+openstack network list
+#+end_src
+
+Explore list of sub networks
+#+begin_src sh
+openstack subnet list
+#+end_src
+
+Get details for a given subnet
+#+begin_src sh
+openstack subnet show public-subnet
+#+end_src
+
+Get the list of all security groups
+#+begin_src sh
+openstack security group list
+#+end_src
+
+Get details for a given security group
+#+begin_src sh
+openstack security group show $SEC_GROUP_ID
+#+end_src
+
+** Use CLI on another user or project (optional)
+You can of course compare the results of the above commands with the very same commands run by a different user or on a different project.
+
+We sent the commands using the =admin= user on the =admin= project, so we were able to look at the cluster from a _super-admin_ point of view. Of course, thanks to the OpenStack resources and project isolation, when we access using any unprivileged user, we will should not be able to see all the cluster information.
+
+To change user just source the desired =openerc= file and look at the differences.
+

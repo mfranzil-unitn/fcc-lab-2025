@@ -45,3 +45,8 @@ relative to the specific exercise.
 - [[file:e07][Exercise 07 - Deploy a webserver and access the main page via a browser]]
 * Lab02a - Requirements
 - [[file:e08][Exercise 08 – Create an OpenStack cluster based on DevStack]]
+* Lab02b - IaaS 1 (20250314)
+- [[file:e09][Exercise 09 – Create a new virtual-machine (instance) on your OpenStack cluster]]
+- [[file:e10][Exercise 10 – Explore API and CLI of your OpenStack cluster]]
+- [[file:e11][Exercise 11 – Prepare the cluster from an admin and user point of view]]
+- [[file:e12][Exercise 12 – Start a custom instance and access from outside of the cluster]]

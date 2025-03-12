@@ -1,0 +1,40 @@
+* Exercise 09 – Create a new virtual-machine (instance) on your OpenStack cluster
+  - Description :: From the OpenStack GUI try to create a virtual machine (it is called Instance) and access its console. Try to understand all the required and non-required arguments and configuration available in the creation and explore the GUI features.
+
+* Solutions and Instructions
+From the left sidebar menu point to the =Compute -> Instances= menu
+
+[[file:figures/1.png]]
+
+
+Now click on =Launch Instance= button on the right
+
+[[file:figures/2.png]]
+
+
+
+Proceed with the form compilation trying to guess the right required arguments for every page and press "Next" until you can press the "Launch Instance" button.
+
+[[file:figures/3.png]]
+
+
+Given that in our installation =Nova= (/Compute Service/) cannot use =Cinder= (/Block Storage Service/) as back-end for storage We will create an instance with [[https://docs.openstack.org/arch-design/design-storage/design-storage-concepts.html][ephemeral storage]], so pay attention in the /Source/ tab to avoid creating a volume for your instance.
+
+[[file:figures/3.1.png]]
+
+Wait your instance to reach the running state
+
+[[file:figures/4.png]]
+
+
+
+Now check it is healthy by accessing its logs
+
+[[file:figures/5.png]]
+
+
+Finally enter in the console and grab a shell prompt
+
+[[file:figures/6.png]]
+
+

@@ -1,0 +1,73 @@
+* Exercise 12 – Start a custom instance and access from outside of the cluster
+   - Description :: As a user boot a custom server into your cluster. Attache the server into a private network but expose it on the public network by reserving a public IP to it. Once done access the server via SSH.
+
+    Finally start a simple service listening on the port =8000= and after configuring properly the firewall access this service from your browser.
+
+* Solutions and Instructions
+** Look at the network configuration for your project
+Make sure to operate as user =demo= on project =demo= in CLI
+#+begin_src sh
+source /vagrant/accrc/demo-demo-openrc.sh
+#+end_src
+
+and also in the GUI.
+
+[[file:figures/1.png]]
+
+
+Look at the network configuration by visiting this URL: =http://10.0.2.15/dashboard/project/network_topology/= or navigating from the right sidebar menu. Here we have two networks a =public= and a =private= that are connected through a =router=. Of course those are all virtual resources.
+
+[[file:figures/2.png]]
+
+** Create your first server
+Create the server starting from the =debian-10= image, using the flavor =ds512M= and attach it to the =private= network. Also tell OpenStack to inject the keypair =demo_keypair= using cloud-init.
+
+Finally attach the security group =ssh-in= to the server to allow incoming connection on port 22.
+
+#+begin_src sh
+openstack server create --flavor ds512M --image debian-10 --network private --key-name demo_keypair --security-group ssh-in my-custom-server
+#+end_src
+
+It will take few minutes to boot your server, in the meantime you can look at the console or see the changes in the network topology, or look at the updated resource usage int he /Overview/ page on the GUI.
+
+** Make the server available on the public internet
+*Note:* In the lab the network simulating the public Internet is the =172.24.4.0/24=
+
+Get a Public IP from the GUI and associate it to the server
+
+[[file:figures/3.png]]
+
+
+[[file:figures/4.png]]
+
+
+[[file:figures/5.png]]
+
+
+Access the new server via SSH. It should work without password due to the previously injected =keypair= containing our public key. If it does not work out-of-the-box try to check in the instance console: the VM may still booting up...
+
+Remember we are using 3 levels of nested virtualization, thus OpenStack instance is quite slow so be patient and try to keeping as low as possible the used resources, for instance by deleting unused instances.
+#+begin_src sh
+ssh debian@$YOUR_FLOATING_IP
+#+end_src
+
+** Expose an application service on the server and access from your browser
+In the prompt on the =my-custom-server= create a simple =index.html= file and expose it on the port =8000= into a screen session.
+#+begin_src sh
+  echo "This is s message exposed on a webserver within my openstack custom server" > index.html
+  screen -dm python3 -m http.server
+  exit
+#+end_src
+
+Try to access on =http://$YOUR_FLOATING_IP:8000= from the browser, connection should be denied by the current security group configuration for that server.
+
+Add the security group =web-in= to your server and check again the connection
+#+begin_src sh
+openstack server add security group my-custom-server web-in
+#+end_src
+
+Finally check the screen session in the server to see logs
+#+begin_src sh
+ssh debian@$YOUR_FLOATING_IP
+screen -r
+#+end_src
