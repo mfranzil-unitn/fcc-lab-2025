@@ -1,0 +1,44 @@
+---
+# File: provision.yml - Install devstack
+
+- hosts: all
+  become: true
+
+  tasks:
+  - name: Upgrade the OS (apt-get dist-upgrade)
+    apt:
+      upgrade: dist
+
+  - name: Run the equivalent of "apt-get update" as a separate step
+    apt:
+      update_cache: yes
+
+  - name: Install packages
+    apt:
+      pkg:
+      - dstat
+      - git
+      - htop
+      - rsync
+      - tmux
+      - screen
+      - vim
+      - wget
+      - jq
+      - snapd
+
+  - name: Add the user 'stack'
+    user:
+      name: stack
+      shell: /bin/bash
+      home: /home/stack
+      groups: admin, sudo
+      append: yes
+
+  - name: Allow 'stack' to have passwordless sudo
+    lineinfile:
+      dest: /etc/sudoers
+      state: present
+      regexp: '^%stack'
+      line: '%stack ALL=(ALL) NOPASSWD: ALL'
+      validate: 'visudo -cf %s'

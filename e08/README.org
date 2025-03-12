@@ -1,0 +1,190 @@
+* Exercise 08 – Create an OpenStack cluster based on DevStack
+  - Description :: Install OpenStack using DevStack on a dedicated virtual machine.
+
+* Solutions and Instructions
+** References
+- [[https://docs.openstack.org/devstack/latest/]]
+- [[https://opendev.org/openstack/devstack]]
+** Provision the OpenStack VM using Vagrant
+The specs for this Virtual Machine are quite huge: =10GB of memory= and =4 vCPU= so please ensure to have enough free resoruces on your host. The suggestion is to suspend all other Vagrant environment while turning on this one.
+#+begin_src sh
+vagrant up
+#+end_src
+
+** Prepare DevStack environment
+Download the DevStack release
+#+begin_src sh
+  vagrant ssh
+  cd /vagrant
+  chmod a+x devstack-init.sh
+  sudo -u stack ./devstack-init.sh
+#+end_src
+
+Customise the DevStack environment
+#+begin_src sh
+  sudo -s -u stack
+  cd
+  cp /vagrant/localrc.conf devstack/local.conf
+#+end_src
+
+Customise =local.conf= with VM ip, first get the IP
+#+begin_src sh
+hostname -I | awk '{print $1}'
+#+end_src
+
+Edit =devstack/local.conf= with your preferred editor, if using nano you can exit with =^X=, =Y=, =[return]=
+#+begin_src sh
+nano devstack/local.conf
+#+end_src
+
+add this line at the top
+#+begin_example
+HOST_IP=THE_IP_FROM_STEP_ABOVE
+#+end_example
+
+You should get something like this:
+#+begin_example
+...
+USE_PYTHON3=True
+LOGFILE=$DEST/logs/stack.sh.log
+HOST_IP=10.0.2.15
+ADMIN_PASSWORD=password
+DATABASE_PASSWORD=password
+...
+#+end_example 
+
+** Install the DevStack environment
+This step could last ~40 minutes for this reason it is better to start it in the background. You could use =screen= or =tmux= to open a detached session of the current shell. The below instructions will use =screen=, see [[https://linuxize.com/post/how-to-use-linux-screen/][here]] and [[https://github.com/tmux/tmux/wiki/Getting-Started][here]] for more information on this two utilities.
+
+Open a detached session with =screen=
+#+begin_src sh
+screen -L
+#+end_src
+now press =return= to get a fresh new prompt. The =-L= flag allow to save the output of this =screen= into a file.
+
+Inside this new session install DevStack
+#+begin_src sh
+  cd devstack
+  ./stack.sh
+#+end_src
+
+You can now exit from this =screen= session using =ctrl + a= =d= and then logout from the Vagrant VM using the =exit= command. As soon as you do not suspend the VM the installation will continue in the background.
+
+The DevStack installation output is going to be saved in =screenlog.0=. Keep its content safe as you may need to use them in order to access the OpenStack cluster later on. Of course you could keep track of the installation progress by looking at the content of the above log file:
+
+#+begin_src sh
+tail -f screenlog.0
+#+end_src
+
+The same output and a summary of the installation is also available at these paths:
+- =/opt/stack/logs/stack.sh.log=
+- =/opt/stack/logs/stack.sh.log.summary=
+
+To recover the =screen= session use
+#+begin_src sh
+screen -r
+#+end_src
+
+At the end of the process you should get a message similar to this:
+#+begin_example
+=========================
+DevStack Component Timing
+ (times are in seconds)
+=========================
+wait_for_service      19
+pip_install          374
+apt-get              272
+run_process           31
+dbsync                41
+git_timed            545
+apt-get-update         3
+test_with_retry        3
+osc                  238
+-------------------------
+Unaccounted time     421
+=========================
+Total runtime        1947
+
+
+
+This is your host IP address: 10.0.2.15
+This is your host IPv6 address: ::1
+Horizon is now available at http://10.0.2.15/dashboard
+Keystone is serving at http://10.0.2.15/identity/
+The default users are: admin and demo
+The password: password
+#+end_example
+
+
+Setup you SSH-based socks proxy and access and access with a browser to =http://10.0.2.15/dashboard= or to =http://localhost/dashboard=
+
+** Manage the OpenStack environment
+The OpenStack version installed in this  environment is based on DevStack which is a quite complicated distribution used by the community to develop OpenStack itself.
+
+It is not intended to run in production, where OpenStack is usually installed directly on multiple bare metal servers, see [[https://docs.openstack.org/networking-odl/rocky/admin/reference_architecture.html][here]] for more information.
+
+Due to above limitation we should take care of the life-cycle of the environment to avoid failures and malfunctions. So follow the below instructions to manage it in the right way.
+
+*** Turn off the environment
+1) Move in the [[file:./][folder]] for this environment
+2) *Turn off* the environment
+   #+begin_src sh
+     vagrant suspend
+   #+end_src
+3) Turn off the Lab VM
+
+
+Remember that =vagrant suspend= save the state of the VM on disk therefore it consumes quite a lot of space in your Lab VM, so keep it under control using =df -h= command.
+
+*** Turn on the environment
+1) Turn on the Lab VM
+2) Move in the [[file:./][folder]] for this environment
+3) *Turn on* the environment
+   #+begin_src sh
+     vagrant up
+   #+end_src
+
+*** Deal with malfunctions
+This allow to quickly start back from a fresh new installed OpenStack, avoiding to loose too much time on a complete re-installation, in the case your cluster would start to show malfunctions and it would be too difficult to troubleshoot them.
+
+Remember that VM snapshots consumes quite a lot of space in your Lab VM, so keep it under control using =df -h= command.
+
+**** Make a snapshot of the Vagrant VM
+Identify the =name= or =uuid= of the Virtualbox VM. The name should start with the exercise number.
+#+begin_src sh
+  vboxmanage list runningvms
+#+end_src
+
+It should print something like the below, where the first part in the =$VM_NAME= while the second part is the =$VM_UUID=:
+#+begin_example
+"e08_default_1683539931765_16357" {2e2333c3-cce3-4ceb-98c1-4f81faa0f7eb}
+#+end_example
+
+Take a live snapshot of the VM
+#+begin_src sh
+  vboxmanage snapshot $VM_NAME take devstack-installed --live
+#+end_src
+
+Ensure the snapshot is present
+#+begin_src sh
+  vboxmanage snapshot $VM_NAME list
+#+end_src
+
+**** Restore from a previous snapshot
+Move in the [[file:./][folder]] for this environment
+
+Ensure the snapshot is present
+#+begin_src sh
+  vboxmanage snapshot $VM_NAME list
+#+end_src
+
+*Turn off* the environment
+#+begin_src sh
+  vagrant suspend
+#+end_src
+
+Restore the snapshot
+#+begin_src sh
+vboxmanage snapshot $VM_NAME restore installed-devstack
+#+end_src
+

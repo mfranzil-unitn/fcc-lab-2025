@@ -41,5 +41,7 @@ relative to the specific exercise.
 - [[file:e03][Exercise 03 - Start and Check your 1st Environment]]
 - [[file:e04][Exercise 04 - Customise and Share the Environment]]
 - [[file:e05][Exercise 05 - Advanced deployment: Provision with Vagrant and Configure with Ansible]]
-- [[file:e06/][Exercise 06 - Learn how-to manage virtual machines on your lab VM]]
+- [[file:e06][Exercise 06 - Learn how-to manage virtual machines on your lab VM]]
 - [[file:e07][Exercise 07 - Deploy a webserver and access the main page via a browser]]
+* Lab02a - Requirements
+- [[file:e08][Exercise 08 – Create an OpenStack cluster based on DevStack]]
