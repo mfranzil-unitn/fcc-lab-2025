@@ -14,6 +14,7 @@ Deploy and provision the VM
 Check inside the guest if the webserver is running
 #+begin_src sh
   vagrant ssh
+  sudo apt install -y lynx
   lynx http://localhost
 #+end_src
 
@@ -61,7 +62,7 @@ Connect to the Lab VM with this command for step 1)
 
 Connect to the desired guest with this command for step 2)
 #+begin_src sh
-  cd fcc-lab-2023/e07/
+  cd fcc-lab-2025/e07/
   vagrant ssh -- -D 4444
 #+end_src
 

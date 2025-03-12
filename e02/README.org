@@ -16,26 +16,40 @@ $SOCKS_PORT=4444
 #+end_example
 
 *** Using a browser extension (preferred choice)
-Jump [[https://addons.mozilla.org/en-US/firefox/addon/switchyomega/][here]], install the extension and confgiure a new entry similarly as explained for the method below.
+Modern versions of Firefox have support for [[https://addons.mozilla.org/en-US/firefox/addon/multi-account-containers/][Multi-Account Containers]] which allows you to separate your browsing contexts. Usually, the use case is to keep different types of browsing activities separate, enhancing privacy and organization. However, it can also be used to separate the browsing context of the SOCKS proxy.
+
+To use the Multi-Account Containers extension to separate the browsing context of the SOCKS proxy, follow these steps:
+
+1. Install the Multi-Account Containers extension from the provided link.
+2. Create a new container for your SOCKS proxy usage.
+3. Configure the container’s settings to use the SOCKS proxy address and port you set up earlier.
 
 *** Configuring your browser
 The examples are for a modern version of Firefox.
 
-Optionally, you can create a profile in your preferred browser, for firefox starts with:
+Optionally, you can create a profile in your preferred browser, for Firefox starts with:
 #+begin_src sh
 firefox --no-remote --ProfileManager
 #+end_src
 
-In Firefox under the network setting add a socks proxy with the address the =$SOCKS_ADDR= and with the port the =$SOCKS_PORT= identified above.
+In Firefox under the network setting, add a SOCKS proxy with the address of the =$SOCKS_ADDR= and the port of the =$SOCKS_PORT= identified above.
 
 [[file:ff-socks.png]]
 
-In very recent version of firefox you will also need to set =network.proxy.allow_hijacking_localhost= to =true= in =about:config=, see [[https://bugzilla.mozilla.org/show_bug.cgi?id=1535581][https://bugzilla.mozilla.org/show_bug.cgi?id=1535581]]
+In very recent versions of Firefox, you will also need to set =network.proxy.allow_hijacking_localhost= to =true= in =about:config=, see [[https://bugzilla.mozilla.org/show_bug.cgi?id=1535581][https://bugzilla.mozilla.org/show_bug.cgi?id=1535581]]
 
 [[file:ff-settings.png]]
 
+*** Using curl
+
+You can also use curl to test the connection. The following command will use the SOCKS proxy to connect to the Lab VM. The =-x= flag is used to specify the proxy address and port.
+
+#+begin_src sh
+  curl -x socks5h://$SOCKS_ADDR:$SOCKS_PORT http://localhost
+#+end_src
+
 ** Launch the tunnel
-Launch an ssh connection with socks support. Read [[https://en.wikipedia.org/wiki/SOCKS][here]] to better understand what a Socks Proxy is and how it works.
+Launch an SSH connection with SOCKS support. Read [[https://en.wikipedia.org/wiki/SOCKS][here]] to better understand what a SOCKS Proxy is and how it works.
 #+begin_src sh
   ssh -D ${SOCKS_ADDR}:${SOCKS_PORT} -p LAB_VM_PORT disi@LAB_VM_URL
 #+end_src

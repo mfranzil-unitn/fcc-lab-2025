@@ -1,7 +1,7 @@
 * Exercise 01 - Generate and upload your SSH key
   - Description :: If you do not have already one, generate an ssh key and save it on your laptop. Then move the key on the lab virtual-machine in order to use public/private authentication. Check that you are able to login on the lab VM without typing your password every time.
 
-      
+    
 * Solutions and Instructions
 Few important details about SSH Public Key Authentication:
 1) It is useful because you avoid typing a password every-time you want to connect to your Lab VM
