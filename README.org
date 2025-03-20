@@ -50,3 +50,6 @@ relative to the specific exercise.
 - [[file:e10][Exercise 10 – Explore API and CLI of your OpenStack cluster]]
 - [[file:e11][Exercise 11 – Prepare the cluster from an admin and user point of view]]
 - [[file:e12][Exercise 12 – Start a custom instance and access from outside of the cluster]]
+* Lab03 - IaaS 2 (20250321)
+- [[file:e13][Exercise 13 – Play with the storage in OpenStack]]
+- [[file:e14][Exercise 14 – Provision, Deploy and Maintain complex infrastructures]]

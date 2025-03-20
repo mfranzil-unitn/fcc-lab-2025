@@ -1,0 +1,26 @@
+---
+- hosts: localhost
+  vars:
+    cluster:
+      name: "ci"
+      ssh_user: "ubuntu"
+      ssh_port: 22
+      ssh_public_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+      master:
+        group: "master"
+        # openstack image list
+        image: "f8046fc2-9c47-4dfd-b2fb-b7a4c4d24b83"
+        # openstack flavor list
+        flavor: "m1.mini"
+        # openstack network list
+        network: "vlab"
+        public_ip: no
+      slaves:
+        count: 1
+        group: "workers"
+        image: "f8046fc2-9c47-4dfd-b2fb-b7a4c4d24b83"
+        flavor: "m1.mini"
+        network: "vlab"
+        public_ip: no
+  roles:
+    - role: ../../ansible-os-cluster

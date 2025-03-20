@@ -1,0 +1,5 @@
+- name: create security group fcc-sg
+  os_security_group:
+    state: present
+    name: "fcc-sg"
+    description: "security group for cluster fcc"

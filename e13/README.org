@@ -1,0 +1,225 @@
+* Exercise 13 – Play with the storage in OpenStack
+  - Description :: As a user of the cluster practice with the *Swift object storage* by creating private and public containers and uploading and downloading objects. Finally inspect the object storage new structure with the CLI.
+
+    Now start to practice also with the *Cinder Block Storage* by creating a new volume, mounting it on an instance. Write some files on the volume and delete the instance. When you mount it again, files are still there.
+
+* Solutions and Instructions
+** Practice with the Object Storage
+*** Explore Swift service
+Make sure to operate as user =demo= on project =demo= in CLI
+#+begin_src sh
+source /vagrant/accrc/demo-demo-openrc.sh
+#+end_src
+
+and also in the GUI.
+
+List all containers in the Object store
+#+begin_src sh
+openstack container list
+#+end_src
+
+List all objects for a given container
+#+begin_src sh
+openstack object list test
+#+end_src
+
+*** Create containers and objects
+Login into the OpenStack dashboard and navigate into the /Object Store -> Container/ section on the left sidebar menu, then click on the /+ Container/ button.
+
+[[file:figures/1.png]]
+
+Through the dialog create two containers:
+- =fcc-priv=: with Container access: Not public
+- =fcc-pub=: with Container access: Public
+
+[[file:figures/2.png]]
+
+Now play a little with your two new containers by creating folders and objects in there and by viewing details and metadata.
+
+[[file:figures/3.png]]
+
+*** Access objects and metadata
+Containers marked as public has a link describing its content on in =XML= which is accessible also if you logout from Horizon. Try to browse it in another tab.
+
+#+begin_src xml
+<container name="fcc-pub">
+  <object>
+    <name>385x400.png</name>
+    <hash>e2e9440cea1864a6d04f81b6ea98fa8f</hash>
+    <bytes>174012</bytes>
+    <content_type>image/png</content_type>
+    <last_modified>2024-03-14T20:53:22.434860</last_modified>
+  </object>
+</container>
+#+end_src
+
+[[file:figures/4.png]]
+
+Also objects are accessible without special authorization. For instance the URL for my object is =http://localhost/dashboard/api/swift/containers/fcc-pub/object/385x400.png=, try to guess your.
+
+*** Inspect Swift again from the CLI
+List all containers in the Object store
+#+begin_src sh
+openstack container list
+#+end_src
+
+List all objects for the =fcc-priv= container
+#+begin_src sh
+openstack object list fcc-priv
+#+end_src
+
+#+begin_example
++-------------------------+
+| Name                    |
++-------------------------+
+| cloud-gears-min.jpg     |
+| fcc-folder/             |
+| fcc-folder/download.png |
++-------------------------+
+#+end_example
+
+List all objects for the =fcc-pub= container
+#+begin_src sh
+openstack object list fcc-pub
+#+end_src
+
+#+begin_example
++-------------+
+| Name        |
++-------------+
+| 385x400.png |
++-------------+
+#+end_example
+
+Retrieve metadata for an object
+#+begin_src sh
+openstack object show fcc-pub 385x400.png
+#+end_src
+
+#+begin_example
++----------------+---------------------------------------+
+| Field          | Value                                 |
++----------------+---------------------------------------+
+| account        | AUTH_66b98a621c6a4768ac1dd5e75265d1af |
+| container      | fcc-pub                               |
+| content-length | 174012                                |
+| content-type   | image/png                             |
+| etag           | e2e9440cea1864a6d04f81b6ea98fa8f      |
+| last-modified  | Thu, 14 Mar 2024 20:53:23 GMT         |
+| object         | 385x400.png                           |
+| properties     | Orig-Filename='385x400.png'           |
++----------------+---------------------------------------+
+#+end_example
+
+
+** Practice with the Block Storage
+*** Create the volume
+From the CLI create a new volume with name =fcc=
+#+begin_src sh
+openstack volume create --size 1 fcc
+#+end_src
+
+Look in the Horizon at the volume page =http://localhost/dashboard/project/volumes/= if volume have been created.
+
+[[file:figures/5.png]]
+
+
+*** Mount the volume
+Move to the /Instances/ page and identify a running instance and mount the volume by pressing /Attach Volume/ from the contextual menu.
+
+[[file:figures/6.png]]
+
+From the dialog select the =fcc= volume and confirm your choice
+
+
+*** Prepare, format and mount the volume
+If not specified volumes are just empty and need a file-system in order to be usable by the operating system.
+
+
+Access the instance via =SSH= or via console and format it with =EXT4=. You may need to adapt the following instruction depending on your specific case.
+
+#+begin_src sh
+ssh debian@172.24.4.67
+lsblk
+#+end_src
+
+you should get all instances disks
+
+#+begin_example
+NAME   MAJ:MIN RM SIZE RO TYPE MOUNTPOINT
+vda    254:0    0   5G  0 disk
+└─vda1 254:1    0   5G  0 part /
+vdb    254:16   0   1G  0 disk
+#+end_example
+
+Format the right one
+#+begin_src sh
+dev='/dev/vdb'
+#sudo umount "$dev"
+printf "o\nn\np\n1\n\n\nw\n" | sudo fdisk "$dev"
+sudo mkfs.ext4 "${dev}1"
+#+end_src
+
+Prepare a directory where to mount the volume: =/mnt/fcc=, and mount it
+
+#+begin_src sh
+sudo mkdir /mnt/fcc
+sudo mount /dev/vdb1 /mnt/fcc
+#+end_src
+
+*** Check and write a persistent file into the volume
+#+begin_src sh
+mount | grep vdb
+sudo -s
+sudo sh -c 'echo "This is s message written in a file from `hostname` on `date`" > /mnt/fcc/file-in-volume.txt'
+cat /mnt/fcc/file-in-volume.txt
+#+end_src
+
+*** Unmount and detach the volume
+Unmount with
+#+begin_src sh
+sudo umount /mnt/fcc
+#+end_src
+
+Detach from Horizon by looking for the right action in the instance contextual menu
+
+[[file:figures/7.png]]
+
+The volume should be now in status /Available/
+
+
+*** Inspect the volume content from another instance
+
+Check the instances and the volumes
+#+begin_src sh
+openstack server list
+openstack volume list
+#+end_src
+
+Identify a different instance you want to attach the volume to, and proceed with attaching it. Then check its status
+
+#+begin_src sh
+openstack server add volume my-first-vm fcc
+openstack volume list
+#+end_src
+
+Volume is now in status /in-use/
+
+#+begin_example
++--------------------------------------+------+--------+------+--------------------------------------+
+| ID                                   | Name | Status | Size | Attached to                          |
++--------------------------------------+------+--------+------+--------------------------------------+
+| 52321e62-fa43-4120-b4e3-d2cbe5d80c83 | fcc  | in-use |    1 | Attached to my-first-vm on /dev/vdb  |
++--------------------------------------+------+--------+------+--------------------------------------+
+#+end_example
+
+Login into the instance and check the volume content
+#+begin_src sh
+sudo mkdir mnt/fcc
+sudo mount /dev/udbl mnt/fcc/
+cat /mnt/fcc/file-in-volume.txt
+#+end_src
+
+#+begin_example
+This is s message written in a file from my-custom-server on Wed 13 Mar 2024 01:10:10 PM UTC
+#+end_example

@@ -1,0 +1,38 @@
+---
+cluster:
+  name: ""
+  ssh_user: ""
+  ssh_port: 22
+  ssh_public_key: ""
+
+  network:
+    name: ""
+
+  router:
+    name: ""
+
+  subnetwork:
+    name: ""
+    cidr: ""
+
+  master:
+    name: ""
+    group: "master"
+    # openstack image list
+    image: ""
+    # openstack flavor list
+    flavor: ""
+    # openstack network list
+    network: ""
+    public_ip: no
+  slaves:
+    prefix: ""
+    count: 1
+    group: "slaves"
+    image: ""
+    flavor: ""
+    network: ""
+    public_ip: no
+
+# Default timeout to wait for a VM provision
+vm_timeout: 120

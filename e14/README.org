@@ -1,0 +1,68 @@
+* Exercise 14 – Provision, Deploy and Maintain complex infrastructures
+  - Description :: Use Ansible to describe in a declarative way how your infrastructure should be. As a user of the cluster use IaC and automation to provision (or also deploy) a complex infrastructure on your OpenStack IaaS cloud. Finally simulate an issue and quickly fix it by running the automation script again.
+
+* Solutions and Instructions
+** Prepare the cluster
+
+Make sure to operate as user =demo= on project =demo= in CLI
+#+begin_src sh
+source /vagrant/accrc/demo-demo-openrc.sh
+#+end_src
+
+and also in the GUI.
+
+
+Delete all the instances to ensure you are not using too much resources
+#+BEGIN_SRC bash
+openstack server list -c ID -f value | xargs -n1 openstack server delete
+#+END_SRC
+
+
+Copy the files of =e14= into the =e08= environment
+#+begin_src sh
+cd e08
+tar -cvf e14.tar ../e14
+vagrant ssh
+tar -xvf /vagrant/e14.tar
+#+end_src
+
+
+** Install requirements
+We need to install Ansible and other few requirements in order to proceed with the provision
+#+begin_src sh
+pip install -r e14/requirements.txt
+#+end_src
+
+** Provision your infrastructure
+Ensure to authenticate current shell with OpenStack
+#+begin_src sh
+source e14/demo-demo-openrc.sh
+#+end_src
+/Note: It may happen that the/ =ansible-playbook= /command is not yet present in your/ =PATH= /and you got an error saying that Ansible is not found. If this is the case please logout and login back or manually add it to your path with/
+#+begin_src sh
+export PATH="$HOME/.local/bin:$PATH"
+#+end_src
+
+
+Proceed with the provision of your infrastructure
+#+begin_src sh
+ansible-playbook e14/deployment/os_cluster.yml
+#+end_src
+
+
+** Check and simulate maintenance
+Check from CLI and from Horizon your resources have been created
+#+begin_src
+openstack server list
+openstack network list
+openstack subnet list
+openstack security group show fcc-sg
+#+end_src
+
+
+Delete a server and restart the Ansible playbook
+#+begin_src
+openstack server delete fcc-slave
+openstack server list
+ansible-playbook e14/deployment/os_cluster.yml
+#+end_src

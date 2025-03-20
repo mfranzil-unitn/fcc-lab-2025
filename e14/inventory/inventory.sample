@@ -1,0 +1,10 @@
+[master]
+#MASTER_IP
+
+[slave]
+#SLAVE_1_IP
+#SLAVE_2_IP
+#SLAVE_N_IP
+
+[all:vars]
+#ansible_user=debian

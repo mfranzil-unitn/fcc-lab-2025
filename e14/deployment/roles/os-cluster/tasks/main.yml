@@ -1,0 +1,47 @@
+---
+- name: create custom self-service network
+  os_network:
+    state: present
+    name: "fcc-net"
+    external: false
+
+- name: create a new (or update an existing) subnet on the specified self-service network
+  os_subnet:
+    state: present
+    network_name: "fcc-net"
+    name: "fcc-sub"
+    cidr: "192.168.5.0/24"
+
+# - name: Create custom router
+#   os_router:
+#     state: present
+#     name: "fcc-router"
+#     network: "public"
+#     interfaces:
+#       - "fcc-network-subnet"
+
+- name: Cluster security group
+  include: "sg_cluster.yml"
+
+# master
+- name: create master VM instance
+  os_server:
+    state: present
+    name: "fcc-master"
+    image: "debian-10"    
+    security_groups: ["fcc-sg"]
+    flavor: "ds512M"
+    wait: "no"
+    nics:
+      - net-name: "fcc-net"
+
+- name: create slave VM instance
+  os_server:
+    state: present
+    name: "fcc-slave"
+    image: "debian-10"    
+    security_groups: ["fcc-sg"]
+    flavor: "ds512M"
+    wait: "no"
+    nics:
+      - net-name: "fcc-net"
