@@ -1,0 +1,25 @@
+* Exercise 15 - Create a Vagrant VM for Docker
+  - Description :: Create a dedicated virtual machine to use for as docker host. This VM can be used for multiple exercises.
+* Solutions and Instructions
+** Ensure you are not running too much environments (recap)
+Check running virtual machines in VirtualBox
+#+begin_src sh
+vboxmanage list runningvms
+#+end_src
+
+Check current environment known by Vagrant
+#+begin_src sh
+vagrant global-status
+#+end_src
+
+** Create a Vagrant VM for Docker
+Move to the root folder of this repository, and check where you are
+#+begin_src sh
+  cd ..
+  pwd
+#+end_src
+
+Create a VirtualBox VM using Vagrant to act as =docker-host=
+#+begin_src sh
+  vagrant up
+#+end_src

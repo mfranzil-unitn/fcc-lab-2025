@@ -53,3 +53,8 @@ relative to the specific exercise.
 * Lab03 - IaaS 2 (20250321)
 - [[file:e13][Exercise 13 – Play with the storage in OpenStack]]
 - [[file:e14][Exercise 14 – Provision, Deploy and Maintain complex infrastructures]]
+* Lab04 - Docker 1 (20250404)
+- [[file:e15][Exercise 15 - Create a Vagant VM for Docker]]
+- [[file:e16][Exercise 16 - Install and Verify Docker]]
+- [[file:e17][Exercise 17 - Hello World with Docker]]
+- [[file:e18][Exercise 18 - Build a custom Docker image]]

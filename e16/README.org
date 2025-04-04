@@ -1,0 +1,53 @@
+* Exercise 16 - Install and Verify Docker
+  - Description :: Install the Docker engine and test it is working.
+* Solutions and Instructions
+** Introduction
+From now on we will use the =docker-host= environment prepare in the previous exercise, that one having the referred =Vagrantfile= at the root of the repository for all the exercises related with the second part of the lab involving PaaS, Docker and containers.
+
+Before we need to install Docker on the host.
+
+** Install Docker on your docker-host
+
+   Download and install Docker repository GPG keys
+   #+BEGIN_SRC sh
+   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+   #+END_SRC
+
+   Add official Docker repository
+   #+BEGIN_SRC sh
+   sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+   #+END_SRC
+
+   Install Docker
+   #+BEGIN_SRC sh
+   sudo apt-get install docker-ce -y
+   #+END_SRC
+
+   Enable ubuntu user to use Docker
+   #+BEGIN_SRC sh
+   sudo usermod -aG docker $USER
+   #+END_SRC
+
+   Logout & Login again
+
+** Test Docker installation
+   View installed Docker version
+   #+BEGIN_SRC sh
+   docker version
+   #+END_SRC
+
+   View available images
+   #+BEGIN_SRC sh
+   docker images
+   #+END_SRC
+
+
+   View running containers
+   #+BEGIN_SRC sh
+   docker ps
+   #+END_SRC
+
+** Future Docker installation (optional)
+Well you learned how to install Docker manually :D
+
+If you need to destroy the reference =docker-host= environment you can simply un-comment the latest lines in [[file:../provision-dockerhost.yml][this Ansible Playbook]] before launching =vagrant up= again so as to have Docker installed and configured by Ansible automatically.

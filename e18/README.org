@@ -1,0 +1,69 @@
+* Exercise 18 – Build a custom Docker image
+  - Description :: Create a personalised image starting from a generic one. Understand how and why your image is different from the initial one. Play with layers and start a container based on the custom image.
+
+* Solutions and Instructions
+** Start an ubuntu based image
+   #+BEGIN_SRC
+   docker run -it ubuntu
+   #+END_SRC
+** Try to use the figlet utility
+   You should get an error since it is not present on the default ubuntu container.
+   #+BEGIN_SRC sh
+   figlet "Fog and Cloud Course"
+   #+END_SRC
+** Install a package and use it
+   #+BEGIN_SRC sh
+   apt-get update
+   apt-get install figlet
+   figlet "Fog and Cloud Course"
+   exit
+   #+END_SRC
+** Show differences from the base image
+   #+BEGIN_SRC sh
+   docker diff <containerID>
+   #+END_SRC
+** Commit changes creating a new layer and the respective image.
+   #+BEGIN_SRC sh
+   docker commit <containerID>
+   #+END_SRC
+   The output is the new image ID (=newImageID=)
+
+   Look at images now
+   #+BEGIN_SRC sh
+   docker images
+   #+END_SRC
+** Start a new container from that image
+   #+BEGIN_SRC sh
+   docker run -it <newImageID>
+   #+END_SRC
+
+   Exit from that container
+   #+BEGIN_SRC sh
+   exit
+   #+END_SRC
+** Give a name to the image
+   #+BEGIN_SRC sh
+   docker tag <newImageID> figlet-${USER: -3}
+   #+END_SRC
+   Or specify the tag as an extra argument of the commit
+   #+BEGIN_SRC sh
+   docker commit <containerID> figlet-${USER: -3}
+   #+END_SRC
+** Look at the available images
+   #+BEGIN_SRC sh
+   docker images
+   #+END_SRC
+** Understand how layers are the building block of images
+   Look at the differences between =figlet= image and =ubuntu= image.
+   #+BEGIN_SRC sh
+   docker inspect ubuntu | jq -C .[].RootFS | cat -n
+   docker inspect figlet-${USER: -3} | jq -C .[].RootFS | cat -n
+   #+END_SRC
+** Start a container based on that image using name
+   #+BEGIN_SRC sh
+   docker run -it figlet-${USER: -3}
+   #+END_SRC
+** Use the binary that is already available this time
+   #+BEGIN_SRC sh
+   figlet "Fog and Cloud Course"
+   #+END_SRC
