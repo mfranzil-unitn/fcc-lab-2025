@@ -1,0 +1,42 @@
+* Exercise 24 – Setup a website based on WordPress on a multi-container architecture
+  - Description :: Install a fresh new website based on the popular CMS WordPress using Docker compose. It should be composed by two containers: the first will act as frontend (webserver), while the second as backend (database). They should be interconnected and should also use a persistent volume for the =htdocs= folder.
+    Finally check from your browser everything is working as expected.
+
+  Credits: [[https://github.com/docker/awesome-compose/tree/master/official-documentation-samples/wordpress]]
+  
+* Solutions and Instructions
+** Look at the Docker compose instructions
+Look into this file: [[file:docker-compose.yml]] and try to understand what are the main configurations
+
+** Install Docker compose
+Your Docker host may be quite old does not include latest version of Docker compose, so install it
+#+begin_src sh
+sudo apt install docker-compose -y
+docker-compose --version
+#+end_src
+
+** Proceed with the installation
+On your docker-host move into the exercise folder and install the multi-container website
+#+begin_src sh
+cd /vagrant/e24
+docker-compose up -d
+#+end_src
+
+** Check output and running containers
+Look at all the stages in the log and check what containers are running now
+#+begin_src sh
+docker ps
+#+end_src
+
+** Proceed with WordPress installation from your browser
+Open =http://localhost= and proceed with minimal installation steps
+
+** Tear down the entire stack
+To destroy a multi-container application just type:
+#+begin_src 
+docker-compose down
+#docker compose down -d --volumes
+#+end_src
+
+
+Congratulations!!! You just installed your first microservices based application ;D

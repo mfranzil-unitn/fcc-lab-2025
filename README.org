@@ -58,3 +58,10 @@ relative to the specific exercise.
 - [[file:e16][Exercise 16 - Install and Verify Docker]]
 - [[file:e17][Exercise 17 - Hello World with Docker]]
 - [[file:e18][Exercise 18 - Build a custom Docker image]]
+* Lab05 - Docker 2 (20250411)
+- [[file:e19][Exercise 19 - Build a Docker image using a Dockerfile]]
+- [[file:e20][Exercise 20 - Make two containers talking each others]]
+- [[file:e21][Exercise 21 – Run a Service with Docker]]
+- [[file:e22][Exercise 22 - Run a custom Service with Docker]]
+- [[file:e23][Exercise 23 - Run a custom Docker Service with persistency]]
+- [[file:e24][Exercise 24 - Setup a website based on WordPress on a multi-container architecture]]

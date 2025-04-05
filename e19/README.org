@@ -1,0 +1,61 @@
+* Exercise 19 - Build a Docker image using a Dockerfile
+  - Description :: After completing last exercise try to build the very same image but using a Dockerfile instead of creating it from a running container. Understand how and why your image is different from the initial one. Give it a name and a tag and optionally upload it on the public Docker registry. Finally start a container based on the custom image.
+
+* Solutions and Instructions
+** Write a Dockerfile
+   You can look at this [[file:Dockerfile][Dockerfile]].
+
+   =FROM= command _must_ be at the very first line
+   #+BEGIN_EXAMPLE
+   FROM <original_image>
+   #+END_EXAMPLE
+
+   In =<original_image>= we could specify a tag, if not =latest= is used:
+   #+BEGIN_EXAMPLE
+   ubuntu
+   ubuntu:latest
+   ubuntu:bionic
+   #+END_EXAMPLE
+
+** Build the image
+   #+BEGIN_SRC sh
+   docker build -t hub.docker.com/myfiglet-${USER: -3} .
+   #+END_SRC
+** List all images
+   #+BEGIN_SRC sh
+   docker image list
+   #+END_SRC
+** Give it a different tag
+   Default tag is =latest=, we can add a new one to mark our very specific version
+   #+BEGIN_SRC sh
+   docker tag hub.docker.com/myfiglet-${USER: -3}:latest hub.docker.com/myfiglet-${USER: -3}:v1
+   #+END_SRC
+
+   List all images again
+   #+BEGIN_SRC sh
+   docker image list
+   #+END_SRC
+
+** Upload it to the Docker Hub (optional)
+   Login into Docker Hub (hub.docker.com)
+   #+BEGIN_SRC sh
+   docker login
+   #+END_SRC
+
+   Push your image /(please look next step before)/
+   #+BEGIN_SRC sh
+   docker push hub.docker.com/myfiglet-${USER: -3}
+   #+END_SRC
+
+   The above command can not work because Docker Hub has namespaces-based permission. If I had been logged in, I would have used something like:
+   #+BEGIN_SRC sh
+   docker tag hub.docker.com/myfiglet-${USER: -3}:latest dsantoro/myfiglet:v1
+   docker push dsantoro/myfiglet:v1
+   #+END_SRC
+
+** Start a new container from the new image
+   =figlet= utility is already there
+   #+BEGIN_SRC sh
+   docker run -it dsantoro/myfiglet:v1
+   figlet "Best UniTN course of the year ;D"
+   #+END_SRC
