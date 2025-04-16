@@ -65,3 +65,9 @@ relative to the specific exercise.
 - [[file:e22][Exercise 22 - Run a custom Service with Docker]]
 - [[file:e23][Exercise 23 - Run a custom Docker Service with persistency]]
 - [[file:e24][Exercise 24 - Setup a website based on WordPress on a multi-container architecture]]
+* Lab06 - Kubernetes 1 (20250416)
+- [[file:e25][Exercise 25 - Prepare environment for k8s]]
+- [[file:e26][Exercise 26 - Install a single-node Kubernetes cluster]]
+- [[file:e27][Exercise 27 – Play with our fresh new k8s cluster]]
+- [[file:e28][Exercise 28 - Start a single pod using a spec file]]
+- [[file:e29][Exercise 29 – Inspect the ReplicaSet]]

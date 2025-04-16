@@ -1,0 +1,66 @@
+* Exercise 25 - Prepare environment for k8s
+  - Description :: Prepare your environment to host a Kubernetes cluster based on Kind. Requirements are:
+    - Install Kind
+    - Download and setup kubectl
+    - Install kubectl completion
+
+* Solutions and Instructions
+*Please note:* If you are in a group, commands marked with =*= *must* be done by one member only
+
+** Install Kind
+   Move into your $HOME (*)
+   #+BEGIN_SRC sh
+   cd
+   #+END_SRC
+
+   Download =kind= binary (*)
+   #+BEGIN_SRC sh
+   wget https://github.com/kubernetes-sigs/kind/releases/download/v0.12.0/kind-linux-amd64
+   #+END_SRC
+
+   Move the =kind= binary into your $PATH and make it available on your server (*)
+   #+BEGIN_SRC sh
+   sudo mv kind-linux-amd64 /usr/local/bin/kind
+   #+END_SRC
+
+   Add permission for execution of =kind= binary (*)
+   #+BEGIN_SRC sh
+   sudo chmod a+x /usr/local/bin/kind
+   #+END_SRC
+
+   Check that =kind= is working on your server
+   #+BEGIN_SRC sh
+   kind --help
+   #+END_SRC
+
+** Downlaod and setup kubectl
+   Download the =kubectl= binary (*)
+   #+BEGIN_SRC sh
+   KC_REL=v1.23.0
+   curl -LO https://storage.googleapis.com/kubernetes-release/release/$KC_REL/bin/linux/amd64/kubectl
+   ## To download the latest version:
+   # curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+   #+END_SRC
+
+   Make the kubectl binary executable (*)
+   #+BEGIN_SRC sh
+   chmod +x ./kubectl
+   #+END_SRC
+
+   Move the binary in to your PATH (*)
+   #+BEGIN_SRC sh
+   sudo mv ./kubectl /usr/local/bin/kubectl
+   #+END_SRC
+
+   Test to ensure the version you installed is working fine
+   #+BEGIN_SRC sh
+   kubectl version
+   #+END_SRC
+
+** Install kubectl completion
+
+   Get the =kubectl= completion code and make it persistent
+   #+BEGIN_SRC sh
+   kubectl completion bash >> ~/.bashrc
+   source $HOME/.bashrc
+   #+END_SRC

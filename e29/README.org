@@ -1,0 +1,51 @@
+* Exercise 29 - Inspect the ReplicaSet
+  - Description :: Inspect resources of your cluster, try to find relations. Learn how to inspect =spec= and =status= of your manifests and to filter information using =JSON= or =YAML= code processors.
+
+* Solutions and Instructions
+** Create a deployment
+   #+BEGIN_SRC sh
+   kubectl create deploy myclock --image=jpetazzo/clock --replicas=3
+   #+END_SRC
+** Recap using jq or yq to inspect resources
+   Using =jq= to inspect =json=
+   #+BEGIN_SRC
+   kubectl get deploy myclock -o json | jq -C . | cat -n
+   #+END_SRC
+
+   Using =yq= to inspect =yaml=
+   #+BEGIN_SRC sh
+   kubectl get deploy myclock -o yaml | yq e -PC | cat -n
+   #+END_SRC
+
+** Filter out some information of the resource
+   Using =jq= to inspect =json=
+   #+BEGIN_SRC
+   kubectl get deploy myclock -o json | jq -C .spec | cat -n
+   kubectl get deploy myclock -o json | jq -C .status | cat -n
+   #+END_SRC
+
+   Using =yq= to inspect =yaml=
+   #+BEGIN_SRC sh
+   kubectl get deploy myclock -o yaml | yq e -PC '.spec' - | cat -n
+   kubectl get deploy myclock -o yaml | yq e -PC '.status' - | cat -n
+   #+END_SRC
+
+** Look at all Pod and filter
+   #+BEGIN_SRC sh
+   kubectl get pod -o json | jq '.items | .[] | .kind, .metadata.name, .metadata.ownerReferences'
+   #+END_SRC
+
+** Filter the name of the active ReplicaSets
+   #+BEGIN_SRC sh
+   kubectl get rs -o json | jq '.items | .[] | .metadata.name'
+   #+END_SRC
+
+** Compare those names with the following output
+   #+BEGIN_SRC sh
+   kubectl get pod
+   #+END_SRC
+** Scale down to a single replica
+   Lets downscale to just 1 replica
+   #+BEGIN_SRC sh
+   kubectl scale deploy myclock --replicas=1
+   #+END_SRC

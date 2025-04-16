@@ -1,0 +1,50 @@
+* Exercise 28 - Start a single pod using a spec file
+  - Description :: Analyze the manifest file describing the Pod resource. Use it to create an object on your Kubernetes cluster. Try to scale object just created and manage objects that are running in your cluster.
+
+* Solutions and Instructions
+** Look at the Pod resource
+   You can look at the Pod resource [[file:clock-pod.yaml][here]]
+
+   Or you can look at the file on your VM
+   #+BEGIN_SRC sh
+   cat clock-pod.yaml | yq e -PC | cat -n
+   #+END_SRC
+
+** Start the Pod on your cluster
+   #+BEGIN_SRC sh
+   kubectl create -f clock-pod.yaml
+   #+END_SRC
+
+   Alternatively, use an HTTP URL
+   #+BEGIN_SRC sh
+     kubectl create -f https://gitlab.fbk.eu/dsantoro/fcc-lab-$YEAR/-/raw/master/e$EX_NUM/clock-pod.yaml
+   #+END_SRC
+
+** Try to scale the Pod
+   Pod cannot be scaled...
+
+** Understanding the kubectl commands
+   Try to guess differences between:
+   - =kubectl create|apply=
+   - =kubect run=
+
+   The help may come in hand
+   #+BEGIN_SRC sh
+   kubectl run --help | head
+   kubectl create --help | head
+   kubectl apply --help | head
+   #+END_SRC
+
+** Manage the resources in your cluster
+   Look at all resources
+   #+BEGIN_SRC sh
+   kubectl get all
+   #+END_SRC
+
+   Delete some of them and see what happen
+   #+BEGIN_SRC sh
+   kubectl delete pod clock-test --wait=false
+   kubectl delete deploy myclock-dep
+   kubectl get all
+   kubectl delete deploy webserver-test
+   #+END_SRC

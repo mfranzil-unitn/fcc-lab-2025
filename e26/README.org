@@ -1,0 +1,64 @@
+* Exercise 26 - Install a single-node Kubernetes cluster
+  - Description :: Create a single-node Kubernetes cluster and perform some interaction with the fresh new cluster.
+
+* Solutions and Instructions
+** Install a single node Kuberntes cluster
+   Using =kind= is as simple as...
+   #+BEGIN_SRC sh
+   kind create cluster
+   #+END_SRC
+   Your cluster will be called =kind= as default
+
+   Note: In the case of a multi-user setup (multiple users ont he same host) use
+   #+BEGIN_SRC sh
+   kind create cluster --name $USER
+   #+END_SRC
+   In this case the name for your cluster will be =$USER=
+
+** Use your kubectl CLI (client) with or without contexts
+   Connect the =kubectl= to your new cluster using =contexts= if you have multiple clusters
+   #+BEGIN_SRC sh
+   kubectl cluster-info --context kind-$USER
+   #+END_SRC
+
+   or without =contexts= if you have just one cluster
+   #+begin_src sh
+   kubectl cluster-info
+   #+end_src
+
+** Understand how kubectl can connect to a cluster
+   To access a cluster we use a =kubeconfig= file [[[https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/][ref]]]. Lets have a look at our file
+   #+BEGIN_SRC sh
+   cat ~/.kube/config \
+   | sed "s/client-key-data:.*/client-key-data: XXX/g" \
+   | sed "s/certificate-authority-data:.*/certificate-authority-data: XXX/g" \
+   | sed "s/client-certificate-data:.*/client-certificate-data: XXX/g" \
+   | yq e -PC | cat -n
+   #+END_SRC
+
+** First interaction with the cluster
+   Ensure cluster is up and running
+   #+BEGIN_SRC sh
+   kubectl cluster-info --context kind-$USER
+   #+END_SRC
+
+   Quick look at the nodes
+   #+BEGIN_SRC sh
+   kubectl get nodes --context kind-$USER
+   #+END_SRC
+
+   Quick look at the workload
+   #+BEGIN_SRC sh
+   kubectl get pod --context kind-$USER
+   #+END_SRC
+
+   Start some workload using =jpetazzo/clock= or =nginx=
+   #+BEGIN_SRC sh
+   kubectl run --image=jpetazzo/clock clock-test --context kind-$USER
+   kubectl create deploy --image=nginx webserver-test --context kind-$USER
+   #+END_SRC
+
+   Quick look at the workload now
+   #+BEGIN_SRC sh
+   kubectl get pod
+   #+END_SRC
