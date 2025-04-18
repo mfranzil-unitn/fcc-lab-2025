@@ -15,7 +15,7 @@
 
    Download =kind= binary (*)
    #+BEGIN_SRC sh
-   wget https://github.com/kubernetes-sigs/kind/releases/download/v0.12.0/kind-linux-amd64
+   wget https://github.com/kubernetes-sigs/kind/releases/download/v0.26.0/kind-linux-amd64
    #+END_SRC
 
    Move the =kind= binary into your $PATH and make it available on your server (*)
@@ -36,7 +36,7 @@
 ** Downlaod and setup kubectl
    Download the =kubectl= binary (*)
    #+BEGIN_SRC sh
-   KC_REL=v1.23.0
+   KC_REL=v1.32.0
    curl -LO https://storage.googleapis.com/kubernetes-release/release/$KC_REL/bin/linux/amd64/kubectl
    ## To download the latest version:
    # curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
