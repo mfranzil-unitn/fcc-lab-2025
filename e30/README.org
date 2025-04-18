@@ -1,0 +1,122 @@
+* Exercise 30 - Deployment rollout
+  - Description :: Change the image of an existing Deployment and see how the Rolling Update feature comes into play. Inspect the log of the new application version and ensure that the update has been done. finally restore the original version of your application (Deployment).
+
+* Solutions and Instructions
+** Ensure to have the correct workload running
+   List deployments
+   #+BEGIN_SRC sh
+   kubectl get deploy -l app=myclock
+   #+END_SRC
+
+   List Pods
+   #+BEGIN_SRC sh
+   kubectl get pod -l app=myclock
+   #+END_SRC
+
+   If nothing is present, create a Deployment
+   #+BEGIN_SRC sh
+   kubectl create deploy myclock --image=jpetazzo/clock --replicas=1
+   #+END_SRC
+** Open two terminal sessions on your VM
+   Use =ssh= to access a new terminal session and ensure to use the correct context/cluster.
+   #+BEGIN_SRC sh
+   kubectl config current-context
+   #+END_SRC
+** Start to watch the workload on first terminal
+   #+BEGIN_SRC sh
+   kubectl get pod -w
+   #+END_SRC
+** Modify the Deployment
+   Move to the second terminal and modify the container image for the =myclock= Deployment. We are modifying the desired state (=spec= attribute) of the Deployment and this can be done in many ways, we propose two of them:
+   1) If you *do not know* how to use the =vim= editor
+
+      1) If you want to use *another editor* for kubectl
+
+         In this case we can change the default editor, we will change it to =nano= in this case.
+
+         If you want to change the default editor for all applications started from the shell (not just kube tools) change the =EDITOR= environment variable
+
+         #+BEGIN_SRC sh
+         # set EDITOR environment variable for the current shell session and all his children
+         export EDITOR="nano"
+
+         # set EDITOR environment variable for all new shell sessions (this command also automatically detects the shell type currently in use and appends to its respective rc file)
+         echo EDITOR="nano" >> ~/.$(ps --quick-pid $$ -o comm=)rc
+         #+END_SRC
+         Alternatively the =KUBE_EDITOR= environment variable can be used instead of =EDITOR= to set the default editor only for kube tools started from the shell
+         #+BEGIN_SRC sh
+         # set KUBE_EDITOR environment variable for the current shell session and all his children
+         export KUBE_EDITOR="nano"
+
+         # set KUBE_EDITOR environment variable for all new shell sessions (this command also automatically detects the shell type currently in use and appends to its respective rc file)
+         echo KUBE_EDITOR="nano" >> ~/.$(ps --quick-pid $$ -o comm=)rc
+         #+END_SRC
+
+         -  A note on =echo EDITOR​=​"nano" >> ~/.$(ps --quick-pid $$ -o comm​=​)rc= (the same exact thing applies to the =KUBE_EDITOR= variant)
+
+            =echo "test" >> test.txt= makes it so the string "test" gets appended to the "test.txt" file
+
+            =echo $$= prints out the current shell PID (it's contained in the =$$= variable)
+
+            =ps --quick-pid $$= lists the name of the process with the specified PID (the current shell process in this example)
+
+            =ps -o comm== lists the current processes by only outputting their process names and no additional information
+
+            =ps --quick-pid $$ -o comm​=​= lists the current shell process name
+
+            =~/.$(ps --quick-pid $$ -o comm​=​)rc= gets evaluated to "~/." + current shell process name + "rc"
+
+            For example if the current shell process name is "bash" the evaluated string is "~/.bashrc",
+            if instead it's "zsh" it gets evaluated to "~/.zshrc"
+
+            =echo EDITOR​=​"nano" >> ~/.$(ps --quick-pid $$ -o comm​=​)rc= writes the string 'EDITOR="nano"' to the "rc" file that corrisponds to the current in use shell name
+
+      2) If you want to *edit the line directly* with a single command
+
+         In this case we can get the object source from =kubectl=, use a pattern replace to modify the image and replace the object
+         #+BEGIN_SRC sh
+         kubectl get deploy myclock -o yaml | sed 's;jpetazzo/clock;jpetazzo/clock:pacific;g' | kubectl replace -f -
+         #+END_SRC
+
+   2) If you *know* how to use the =vim= editor
+
+      In this case we can simply use the editor to modify the image by modifying its =yaml= representation. Pay particular attention to not modify the =yaml= indentation.
+      #+BEGIN_SRC sh
+      kubectl edit deploy myclock
+      #+END_SRC
+
+   If you just choose 1), please [[https://vim-adventures.com/][practice]] with =vim=.
+** Look the Rolling Update in action
+   Look at the first terminal. What is happening to our Pods?
+** Explore Deployment versions
+   #+BEGIN_SRC sh
+   kubectl rollout history deploy myclock
+   #+END_SRC
+
+   Explore details of a specific version
+   #+BEGIN_SRC sh
+   kubectl rollout history deploy myclock --revision=REVISION_NUM
+   #+END_SRC
+
+   Look at the differences across the two revisions
+   #+BEGIN_SRC sh
+   sdiff <(kubectl rollout history deploy myclock --revision=2) <(kubectl rollout history deploy myclock --revision=1)
+   #+END_SRC
+** Look at the Replicasets
+   We have both replicasets still present in the cluster but only one is running and linked to the Deployment
+   #+BEGIN_SRC sh
+   kubectl get rs
+   #+END_SRC
+   Look at the images
+   #+BEGIN_SRC sh
+   kubectl get rs -o wide
+   #+END_SRC
+** Rollback to the original version
+   #+BEGIN_SRC sh
+   kubectl rollout undo deployment myclock
+   #+END_SRC
+
+   Or manually by creating another revision
+   #+BEGIN_SRC sh
+   kubectl get deploy myclock -o yaml | sed s/clock:pacific/clock/g | kubectl replace -f -
+   #+END_SRC

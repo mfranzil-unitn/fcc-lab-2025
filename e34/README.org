@@ -1,0 +1,99 @@
+* Exercise 34 - Pod-to-Pod Communications
+  - Description :: Deploy two microservices on different worker nodes:
+    a client and a server. To ensure the scheduler respects your
+    requirements temporarily disable the scheduling on one worker node
+    before installing the second microservice. Test the communication
+    from client to server ensuring the inter-cluster communications
+    across Pods is working as expected.
+
+* Solutions and Instructions
+** Inspect the server microservice
+   Look at the resource you are going to deploy [[file:server-deploy.yaml][here]]
+** Deploy the server microservice
+   Deploy with
+   #+BEGIN_SRC sh
+   kubectl create -f server-deploy.yaml
+   #+END_SRC
+
+   Look at its unique IP and where it has been scheduled
+   #+BEGIN_SRC sh
+   kubectl get po -o wide
+   #+END_SRC
+
+** Grab server Pod name, unique IP and Worker Node
+   Save the Pod name
+   #+BEGIN_SRC sh
+   SERVER_NAME=`kubectl get pod -l app=server -o jsonpath='{.items[0].metadata.name}'`
+   #+END_SRC
+
+   Save the Pod unique IP
+   #+BEGIN_SRC sh
+   SERVER_IP=`kubectl get pod -l app=server -o jsonpath='{.items[0].status.podIP}'`
+   #+END_SRC
+
+   Save the Worker Node where the Pod has been scheduled
+   #+BEGIN_SRC sh
+   SERVER_NODE=`kubectl get pod -l app=server -o jsonpath='{.items[0].spec.nodeName}'`
+   #+END_SRC
+
+   Ensure information are correct
+   #+BEGIN_SRC sh
+   echo "My server is $SERVER_NAME. It has IP: $SERVER_IP and runs on worker node $SERVER_NODE"
+   #+END_SRC
+
+** Avoid scheduling on the node where the server is running
+   Put a taint =NoSchedule= on the worker node
+   #+BEGIN_SRC sh
+   kubectl taint node $SERVER_NODE node-role.kubernetes.io/master=value:NoSchedule
+   #+END_SRC
+
+** Start the client microservice
+   Start an ubuntu based Pod
+   #+BEGIN_SRC sh
+   kubectl run --image=dsantoro/ubuntu --env="SERVER_IP=$SERVER_IP" client sleep infinity
+   #+END_SRC
+
+   Ensure it is running
+   #+BEGIN_SRC sh
+   kubectl get pod
+   #+END_SRC
+
+   Save the Pod name
+   #+BEGIN_SRC sh
+   CLIENT_NAME=`kubectl get pod -l run=client -o jsonpath='{.items[0].metadata.name}'`
+   #+END_SRC
+
+   Save the Pod unique IP
+   #+BEGIN_SRC sh
+   CLIENT_IP=`kubectl get pod -l run=client -o jsonpath='{.items[0].status.podIP}'`
+   #+END_SRC
+
+   Save the Worker Node where the Pod has been scheduled
+   #+BEGIN_SRC sh
+   CLIENT_NODE=`kubectl get pod -l run=client -o jsonpath='{.items[0].spec.nodeName}'`
+   #+END_SRC
+
+   Ensure information are correct
+   #+BEGIN_SRC sh
+   echo "My client is $CLIENT_NAME. It has IP: $CLIENT_IP and runs on worker node $CLIENT_NODE"
+   #+END_SRC
+
+** Contact the server
+   Get a prompt inside the client Pod
+   #+BEGIN_SRC sh
+   kubectl exec -it $CLIENT_NAME /bin/bash
+   #+END_SRC
+
+   Connect with the server using its IP
+   #+BEGIN_SRC sh
+   curl http://$SERVER_IP:8000
+   #+END_SRC
+
+** Restore the original scheduling settings
+   Remove the taint
+   #+BEGIN_SRC sh
+   kubectl taint node $SERVER_NODE node-role.kubernetes.io/master-
+   #+END_SRC
+
+** Question
+   Do you see something interesting in the =server= and =client= IP addresses?

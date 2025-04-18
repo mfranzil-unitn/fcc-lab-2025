@@ -1,0 +1,36 @@
+* Exercise 33 - Create a multi-node cluster
+  - Description :: Delete the current cluster which is composed by a
+    single worker node (the master node) and create a fresh new
+    cluster composed by one master node and two worker nodes. Check
+    cluster and nodes status. 
+
+* Solutions and Instructions
+** Remove the single node cluster to save resources
+   #+BEGIN_SRC sh
+   kind delete cluster --name $USER
+   #+END_SRC
+
+** Inspect the Kind manifest of a multi-node cluster
+   #+BEGIN_SRC sh
+   cat kind-multi-node.yaml | yq e -C | cat -n
+   #+END_SRC
+
+** Create a new multi-node cluster with =kind=
+   #+BEGIN_SRC sh
+   kind create cluster --config kind-multi-node.yaml --name $USER
+   #+END_SRC
+
+** Ensure =kubectl= points to the new cluster
+   #+BEGIN_SRC sh
+   kubectl config current-context
+   #+END_SRC
+
+** Ensure cluster is up and running
+   #+BEGIN_SRC sh
+   kubectl cluster-info
+   #+END_SRC
+
+** Inspect the three node status
+   #+BEGIN_SRC sh
+   kubectl get nodes
+   #+END_SRC

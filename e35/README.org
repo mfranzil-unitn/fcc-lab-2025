@@ -1,0 +1,80 @@
+* Exercise 35 - External World-To-Pod Communication
+  - Description :: Deploy a microservice that act as a server. It must
+    expose a service showing the Pod name and the Worker node where it
+    has been scheduled. Moreover this service should be exposed
+    outside the cluster on a specific port, the =30000=. Finally
+    expose the very same microservice using a random external port.
+
+* Solutions and Instructions
+** Inspect the server microservice
+   Look at the resource you are going to deploy [[file:lb-example.yaml][here]]
+
+   1) Try to understand how many resources are present in the manifest
+   2) Try to understand the type of those resources
+   3) Try to understand how the Pod exposes its name and the worker node where it has been scheduled
+   4) Try to understand how the Pod is connected with the Service
+
+** Deploy the server microservice
+   Deploy with
+   #+BEGIN_SRC sh
+   kubectl create -f lb-example.yaml
+   #+END_SRC
+
+   Ensure it is running and look at its unique IP and where it has been scheduled
+   #+BEGIN_SRC sh
+   kubectl get po -o wide
+   #+END_SRC
+** Check the service status
+   Ensure the service has been created
+   #+BEGIN_SRC sh
+   kubectl get services
+   #+END_SRC
+
+   Inspect the service details
+   #+BEGIN_SRC sh
+   kubectl describe service lb-example
+   #+END_SRC
+
+** Grab the external IP exposed by your cluster
+   Get the IP of the master node
+   #+BEGIN_SRC sh
+   MASTER_IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $USER-control-plane`
+   #+END_SRC
+
+   Ensure the IP is correct
+   #+BEGIN_SRC sh
+   echo "My cluster is available from outside world using its master node IP, which is $MASTER_IP"
+   #+END_SRC
+
+   - Why we use this IP?
+   - What are IPs of other nodes in the cluster?
+   - What are the IPs of other clusters in the PaaS VM?
+
+** Access the service from outside
+   Test access from the Lab Virtual Machine or from your browser
+   #+BEGIN_SRC sh
+   echo "I can reach the service using this URL: http://$MASTER_IP:30000"
+   curl http://$MASTER_IP:30000
+   #+END_SRC
+
+** Expose the server with another service
+   Use =kubectl expose= to create a new service linked with our Deployment
+   #+BEGIN_SRC sh
+   kubectl expose deploy lb-example --port 8000 --type=NodePort --name=lb-example-random
+   #+END_SRC
+
+   Check the service status and identify the random port
+   #+BEGIN_SRC sh
+   kubectl get svc
+   #+END_SRC
+
+   #+BEGIN_SRC sh
+   RANDOM_PORT=`kubectl get svc lb-example-random -o jsonpath='{.spec.ports[0].nodePort}'`
+   #+END_SRC
+
+** Access the service from outside
+   Test access from the Lab Virtual Machine or from your browser
+   #+BEGIN_SRC sh
+   echo "I can reach the service using this URL: http://$MASTER_IP:$RANDOM_PORT"
+   curl http://$MASTER_IP:$RANDOM_PORT
+   #+END_SRC

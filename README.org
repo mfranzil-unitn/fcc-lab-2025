@@ -71,3 +71,11 @@ relative to the specific exercise.
 - [[file:e27][Exercise 27 – Play with our fresh new k8s cluster]]
 - [[file:e28][Exercise 28 - Start a single pod using a spec file]]
 - [[file:e29][Exercise 29 – Inspect the ReplicaSet]]
+* Lab07 - Kubernetes 2 (20250430)
+- [[file:e30][Exercise 30 - Deployment rollout]]
+- [[file:e31][Exercise 31 - Labels and Selectors]]
+- [[file:e32][Exercise 32 - ConfigMaps & Secrets]]
+- [[file:e33][Exercise 33 - Create a multi-node cluster]]
+- [[file:e34][Exercise 34 - Pod-to-Pod Communications]]
+- [[file:e35][Exercise 35 - External World-To-Pod Communication]]
+- [[file:e36][Exercise 36 - Load Balancing]]

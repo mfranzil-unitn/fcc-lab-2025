@@ -1,0 +1,75 @@
+* Exercise 36 - Load Balancing
+  - Description :: Scale the number of microservices of the server
+    Deployment (of course is the ReplicaSet which scale) created
+    during previous exercise to 6 replicas. While scaling it, look at the 
+    workload in the cluster and especially paying attention on how the
+    scheduler distribute the workload. Then have a look at how the Service
+    resource has been modified by Kubernetes and finally try to access
+    the server many times.
+
+* Solutions and Instructions
+** Ensure to have the correct workload running
+   Clear all workload except Pods controlled by the =lb-example= Deployment
+   #+BEGIN_SRC sh
+   kubectl delete deploy -l app!=lb-example
+   #+END_SRC
+
+   List deployments
+   #+BEGIN_SRC sh
+   kubectl get pod -o wide
+   #+END_SRC
+
+** Open two terminal sessions on your VM
+   Use =ssh= to access a new terminal session and ensure to use the correct context/cluster.
+   #+BEGIN_SRC sh
+   kubectl config current-context
+   #+END_SRC
+
+** Start to watch the workload on first terminal
+   #+BEGIN_SRC sh
+   kubectl get pod -o wide -w
+   #+END_SRC
+
+** Scale the Deployment
+   Move to the second terminal and scale the Deployment increasing the number of replicas controlled by its ReplicaSet
+   #+BEGIN_SRC sh
+   kubectl scale deploy lb-example --replicas=6
+   #+END_SRC
+
+   Keep an eye on how Kubernetes scheduled the new Pods
+   #+BEGIN_SRC sh
+   kubectl get pod -o wide
+   #+END_SRC
+
+** Inspect the Service resources
+   #+BEGIN_SRC sh
+   kubectl describe service lb-example
+   kubectl describe service lb-example-random
+   #+END_SRC
+
+** Verify the Load Balancing
+   Ensure to grab the IP of the master node
+   #+BEGIN_SRC sh
+   MASTER_IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $USER-control-plane`
+   #+END_SRC
+
+   Ensure the IP is correct
+   #+BEGIN_SRC sh
+   echo "My cluster is available from outside world using its master node IP, which is $MASTER_IP"
+   #+END_SRC
+
+   Query the Load Balancer service multiple times and look at the replies
+   #+BEGIN_SRC sh
+   while true; do curl -m1 http://$MASTER_IP:30000; sleep 1; done
+   #+END_SRC
+
+** Downscale replicas "in production"
+   Move to the first terminal and downscale replicas back to 1 while looking at the server replies
+   #+BEGIN_SRC sh
+   kubectl get deploy lb-example -o yaml | sed 's/replicas: 6/replicas: 1/g' | kubectl replace -f -
+   #+END_SRC
+
+   Optionally increase one more time the number of replicas looking at the server replies again
+   #+BEGIN_SRC sh
+   kubectl get deploy lb-example -o yaml | sed 's/replicas: 1/replicas: 6/g' | kubectl replace -f -
+   #+END_SRC

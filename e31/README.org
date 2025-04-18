@@ -1,0 +1,58 @@
+* Exercise 31 - Labels and Selectors
+  - Description :: Create five replicas of an example
+    application. Mark the first three with a label =com=frontend= and
+    =env=prod=, the last two with label =com=backend= and the last one
+    with label =env=dev=. Then try to perform the following queries
+    using selectors:
+    1) List all Pods with their labels
+    2) List Pods with label =com=backend=
+    3) List Pods with label =com!=backend=
+    4) List Pods with labels =env=prod= AND =env=dev=
+    5) List all Pods with labels =env=prod= OR =env=dev=
+
+* Solutions and Instructions
+  Clear everything
+  #+BEGIN_SRC sh
+  kubectl delete all --all
+  #+END_SRC
+
+  Create some test workload
+  #+BEGIN_SRC sh
+  kubectl create deploy --image=jpetazzo/clock clock --replicas=5
+  #+END_SRC
+
+  Mark 1
+  #+BEGIN_SRC sh
+  kubectl get po -o json | jq -r '.items[] | .metadata.name' | head -n3 | xargs -I{} kubectl label pods {} com=frontend env=prod
+  #+END_SRC
+
+  Mark 2
+  #+BEGIN_SRC sh
+  kubectl get po -o json | jq -r '.items[] | .metadata.name' | tail -n2 | xargs -I{} kubectl label pods {} com=backend
+  #+END_SRC
+
+  Mark 3
+  #+BEGIN_SRC sh
+  kubectl get po -o json | jq -r '.items[] | .metadata.name' | tail -n1 | xargs -I{} kubectl label pods {} env=dev
+  #+END_SRC
+
+  1) List all Pods with their labels
+     #+BEGIN_SRC sh
+     kubectl get pod --show-labels
+     #+END_SRC
+  2) List Pods with label =com=backend=
+     #+BEGIN_SRC sh
+     kubectl get po -l com=backend
+     #+END_SRC
+  3) List Pods with label =com!=backend=
+     #+BEGIN_SRC sh
+     kubectl get po -l com!=backend
+     #+END_SRC
+  4) List Pods with labels =env=prod= AND =env=dev=
+     #+BEGIN_SRC sh
+     kubectl get po -l env=prod,env=dev
+     #+END_SRC
+  5) List all Pods with labels =env=prod= OR =env=dev=
+     #+BEGIN_SRC sh
+     kubectl get po -l 'env in (prod,dev)'
+     #+END_SRC

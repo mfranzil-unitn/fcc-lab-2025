@@ -1,0 +1,103 @@
+* Exercise 32 - ConfigMaps and Secrets
+  - Description :: Create ConfigMaps and Secrets in various ways,
+    attach them to a Pod and try to retrieve them from inside the
+    Pod.
+
+* Solutions and Instructions
+  Create a ConfigMap from literal values
+  #+BEGIN_SRC sh
+  kubectl create configmap my-config --from-literal=key1=value1 --from-literal=key2=value2
+  #+END_SRC
+
+  Create a ConfigMap from the =customer1-configmap.yaml= file (filename must correspond to ConfigMap name)
+  #+BEGIN_SRC sh
+  kubectl create -f customer1-configmap.yaml
+  #+END_SRC
+
+  Create a ConfigMap from a folder structure, see [[file:numbers/][here]]
+  #+BEGIN_SRC sh
+  kubectl create configmap numbers --from-file=./numbers/
+  #+END_SRC
+
+  Create a ConfigMap from a plain file, see [[file:favorite][here]]
+  #+BEGIN_SRC sh
+  kubectl create configmap color --from-file=./favorite
+  #+END_SRC
+
+  Get values from an existing ConfigMap
+  #+BEGIN_SRC sh
+  kubectl get configmaps my-config -o yaml | yq e -C | cat -n
+  kubectl get configmaps customer1 -o yaml | yq e -C | cat -n
+  kubectl get configmaps numbers -o yaml | yq e -C | cat -n
+  kubectl get configmaps color -o yaml | yq e -C | cat -n
+  #+END_SRC
+
+  Start a Pod using ConfigMap values as environment variables, see Pod manifest [[file:simpleshell.yaml][here]]
+  #+BEGIN_SRC sh
+  kubectl create -f simpleshell.yaml
+  #+END_SRC
+
+  Check env values inside the pod
+  #+BEGIN_SRC sh
+  kubectl exec shell-demo -- /bin/bash -c 'env'
+  #+END_SRC
+
+  Start a pod which mount a configmap in a volume, see [[file:simpleshell-vol.yaml][here]]
+  #+BEGIN_SRC sh
+  kubectl create -f simpleshell-vol.yaml
+  #+END_SRC
+
+  Inspect the configmap volume inside the pod
+  #+BEGIN_SRC sh
+  kubectl exec shell-demo-vol -- /bin/bash -c 'df -ha |grep customer'
+  #+END_SRC
+
+  Get a value from the cofigmap
+  #+BEGIN_SRC sh
+  kubectl exec shell-demo-vol -- /bin/bash -c 'cat /etc/customer1/TEXT1.name'
+  #+END_SRC
+
+  Create a Secret
+  #+BEGIN_SRC sh
+  kubectl create secret generic my-password --from-literal=password=mysqlpassword
+  #+END_SRC
+  Note: /The above command creates a secret called/ =my-password=, /which has the value of the/ =password= /key set to/ =mysqlpassword=
+  
+  Inspect the secret
+  #+BEGIN_SRC sh
+  kubectl get secret my-password -o yaml | yq e -C | cat -n
+  #+END_SRC
+
+  Secrets can be created manually using the YAML representation as
+  other k8s resources.
+  With Secrets, each object data must be encoded using
+  =base64=. If we want to have a configuration file for our Secret, we
+  must first get the =base64= encoding for our password:
+  
+  #+BEGIN_SRC sh
+  echo -n mysqlpassword | base64
+  #+END_SRC
+  Should output
+  #+begin_example
+  bXlzcWxwYXNzd29yZA==
+  #+end_example
+
+  The obfuscated =base64= string must be used in the secret file as
+  value of the desired key, when creating it.
+
+  Please note that base64 encoding does not do any encryption, and anyone can easily decode it:
+  #+BEGIN_SRC sh
+  echo "bXlzcWxwYXNzd29yZA==" | base64 --decode; echo
+  #+END_SRC
+  _Therefore, make sure you do not commit a Secret's configuration file in the source code._
+
+
+  Use the secret as an =ENV_VAR= in a pod, see [[file:simpleshell-sec.yaml][here]]
+  #+BEGIN_SRC sh
+  kubectl create -f simpleshell-sec.yaml
+  #+END_SRC
+
+  Inspect the secret in the pod
+  #+BEGIN_SRC sh
+  kubectl exec shell-demo-sec -- /bin/bash -c 'echo $MYPWD'
+  #+END_SRC

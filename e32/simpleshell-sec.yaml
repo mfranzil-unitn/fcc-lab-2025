@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: shell-demo-sec
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    env:
+    - name: MYPWD
+      valueFrom:
+        secretKeyRef:
+          name: my-password
+          key: password
