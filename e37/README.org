@@ -1,0 +1,157 @@
+* Exercise 37 - Volumes
+  - Description :: Create two webservers: the first with ephemeral
+    storage and the second with persistent storage, finally then check
+    the differences. In the second case the webserver =document-root=
+    is exposed via a Volume.
+
+    There will be a built in storage class so that I can deploy
+    applications that request persistent volume claims.
+
+    Ensure that modification on the document root are persistent
+    across pod restarts: If my pod restarts I want that pod to be
+    scheduled such that the persistent volume claim is available again
+    to it.
+
+    This ensures that if I have to restart my pod will always come
+    back with access to the same data.
+
+* Solutions and Instructions
+  Inspect the default solution to manage Volumes in kind: [[https://github.com/rancher/local-path-provisioner][Ranchers
+  local path persistent storage solution]].
+
+  Check which is the default StorageClass
+  #+BEGIN_SRC sh
+  kubectl get storageclass
+  #+END_SRC
+
+  This solution relies on a deployment of some resources in the
+  =local-path-storage= namespace, inspect them
+  #+BEGIN_SRC sh
+  kubectl get all -n local-path-storage
+  #+END_SRC
+
+  *Note:* /Note the way this storage solution works: When a pvc is created the persistent volume will be dynamically created on the node that the pod is scheduled to. This means that in the case of pod failure or restart the pod will only be scheduled to the node where the persistent volume was allocated. If that node is not available then the pod will not schedule./
+
+  *Create the first webserver - with ephemeral storage*
+
+  Create an ephemeral webserver
+  #+BEGIN_SRC sh
+  kubectl create deploy --image=nginx ws-ephemeral
+  #+END_SRC
+
+  Expose this webserver via a =Service=
+  #+BEGIN_SRC sh
+  kubectl expose deploy ws-ephemeral --type=NodePort --port=80
+  #+END_SRC
+
+  Get the IP of the master node
+  #+BEGIN_SRC sh
+  MASTER_IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $USER-control-plane`
+  #+END_SRC
+
+  Get the random NodePort
+  #+BEGIN_SRC sh
+  RANDOM_PORT_EPH=`kubectl get svc ws-ephemeral -o jsonpath='{.spec.ports[0].nodePort}'`
+  #+END_SRC
+
+  Test access from the Lab Virtual Machine or from your browser
+  #+BEGIN_SRC sh
+  echo "I can reach the service using this URL: http://$MASTER_IP:$RANDOM_PORT_EPH"
+  curl http://$MASTER_IP:$RANDOM_PORT_EPH
+  #+END_SRC
+
+  Overwrite the main nginx page
+  #+BEGIN_SRC sh
+  WS_EPH=`kubectl get pod -l app=ws-ephemeral -o jsonpath='{.items[0].metadata.name}'`
+  kubectl cp index.html $WS_EPH:/usr/share/nginx/html/index.html
+  #+END_SRC
+
+  Check the service again. Default page is customized
+  #+BEGIN_SRC sh
+  curl http://$MASTER_IP:$RANDOM_PORT_EPH
+  #+END_SRC
+
+  Delete the pod
+  #+BEGIN_SRC sh
+  kubectl delete pod -l app=ws-ephemeral
+  #+END_SRC
+
+  Check the service again (waith for the pod the be
+  rescheduled). Default page is back to NGINX default one
+  #+BEGIN_SRC sh
+  curl http://$MASTER_IP:$RANDOM_PORT_EPH
+  #+END_SRC
+
+  *Create the second webserver - with persistent storage*
+
+  Inspect =PersistentVolumes= and =PersistentVolumeClaims=
+  #+BEGIN_SRC sh
+  kubectl get pv
+  kubectl get pvc
+  #+END_SRC
+
+  Check the [[file:pvc.yaml][resource]] and create a PersistentVolumeClaim
+  #+BEGIN_SRC sh
+  kubectl create -f pvc.yaml
+  #+END_SRC
+
+  Check again the =PersistentVolumeClaims=
+  #+BEGIN_SRC sh
+  kubectl get pvc
+  #+END_SRC
+
+  Check the [[file:ws-persistent.yaml][resource]] and create a persistent webserver
+  #+BEGIN_SRC sh
+  kubectl create -f ws-persistent.yaml
+  #+END_SRC
+
+  Inspect again the =PersistentVolumes= and =PersistentVolumeClaims=
+  #+BEGIN_SRC sh
+  kubectl get pv
+  kubectl get pvc
+  #+END_SRC
+
+  Expose this webserver via a =Service=
+  #+BEGIN_SRC sh
+  kubectl expose deploy ws-persistent --type=NodePort --port=80
+  #+END_SRC
+
+  Get the random NodePort
+  #+BEGIN_SRC sh
+  RANDOM_PORT_PER=`kubectl get svc ws-persistent -o jsonpath='{.spec.ports[0].nodePort}'`
+  #+END_SRC
+
+  Test access from the Lab Virtual Machine or from your browser, the
+  service reply with =403= because the document root is empty and we
+  cannot list =/= by default.
+  #+BEGIN_SRC sh
+  echo "I can reach the service using this URL: http://$MASTER_IP:$RANDOM_PORT_PER"
+  curl http://$MASTER_IP:$RANDOM_PORT_PER
+  #+END_SRC
+
+  Let's create a default page by copying an =index.html= page into the NGINX document root
+  #+BEGIN_SRC sh
+  WS_PER=`kubectl get pod -l app=ws-persistent -o jsonpath='{.items[0].metadata.name}'`
+  kubectl cp index.html $WS_PER:/usr/share/nginx/html/index.html
+  #+END_SRC
+
+  Check the service again. Default page is now present and it is customized by us
+  #+BEGIN_SRC sh
+  curl http://$MASTER_IP:$RANDOM_PORT_PER
+  #+END_SRC
+
+  Delete the pod
+  #+BEGIN_SRC sh
+  kubectl delete pod -l app=ws-persistent
+  #+END_SRC
+
+  Check the service again. Default page is customized also in the new pod
+  #+BEGIN_SRC sh
+  curl http://$MASTER_IP:$RANDOM_PORT_PER
+  #+END_SRC
+
+  - How can we check the file of the persistent storage on the k8s node?
+    Tip: use =docker exec=
+  - Inspect the =PersistentVolume=. How is it attached to the chosen worker node?
+    Tip: Inspect the =PersistentVolume= manifest created by the
+    provisioner

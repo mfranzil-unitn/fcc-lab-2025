@@ -79,3 +79,7 @@ relative to the specific exercise.
 - [[file:e34][Exercise 34 - Pod-to-Pod Communications]]
 - [[file:e35][Exercise 35 - External World-To-Pod Communication]]
 - [[file:e36][Exercise 36 - Load Balancing]]
+* Lab08 - Kubernetes 3 (20250514)
+- [[file:e37][Exercise 37 - Volumes]]
+- [[file:e38][Exercise 38 - Namespaces]]
+- [[file:e39][Exercise 39 - Pod placement]]

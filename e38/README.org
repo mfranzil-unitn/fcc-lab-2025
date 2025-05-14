@@ -1,0 +1,44 @@
+* Exercise 38 - Namespaces
+  - Description :: Play with namespaces and explore “hidden”
+    workload. Can you find out where is Kubernetes control plane
+    running? 
+
+* Solutions and Instructions
+  Explore the namespaces in your cluster
+  #+BEGIN_SRC sh
+  kubectl get namespaces
+  #+END_SRC
+
+  Explore the workload of the =kube-system= namespace
+  #+BEGIN_SRC sh
+  kubectl get pod -n kube-system -o wide
+  #+END_SRC
+
+  Where is Kubernetes control-plane running?
+
+  Explore how node services are represented in the system
+  #+BEGIN_SRC sh
+  kubectl get daemonset -n kube-system
+  #+END_SRC
+
+  Create your personal namespace
+  #+BEGIN_SRC sh
+  MYNS=$(echo $USER | sed -e 's/\.//g')
+  kubectl create ns $MYNS
+  #+END_SRC
+
+  Deploy some workload in a dedicated namespace
+  #+BEGIN_SRC sh
+  kubectl run --image=jpetazzo/clock myclock -n $MYNS
+  #+END_SRC
+
+  Check where this workload is running
+  #+BEGIN_SRC sh
+  kubectl get pod
+  kubectl get pod -n $MYNS
+  #+END_SRC
+
+  Check all workload in the cluster
+  #+BEGIN_SRC sh
+  kubectl get pod --all-namespaces
+  #+END_SRC

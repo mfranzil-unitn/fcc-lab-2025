@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ws-persistent
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ws-persistent
+  template:
+    metadata:
+      labels:
+        app: ws-persistent
+    spec:
+      containers:
+      - name: ws
+        image: nginx
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: volume
+          mountPath: /usr/share/nginx/html/
+      volumes:
+      - name: volume
+        persistentVolumeClaim:
+          claimName: mypvc

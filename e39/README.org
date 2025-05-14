@@ -1,0 +1,35 @@
+* Exercise 39 - Pod placement
+  - Description :: Modify the lb-example Deployment adding a
+    NodeSelector requiring a label =region=EDGE= constraint and deploy
+    it on a specific node.
+
+    If this does not work out of the box, try
+    to inspect why the scheduler is not able to complete the request
+    and apply corrective actions.
+
+* Solutions and Instructions
+** Inspect the modified Deployment
+   Identify the changes in [[file:lb-example-edge.yaml][this]] file
+** Deploy the new lb-example
+   #+BEGIN_SRC sh
+   kubectl create -f lb-example-edge.yaml
+   #+END_SRC
+** Check the work load
+   #+BEGIN_SRC sh
+   kubectl get pod -o wide
+   #+END_SRC
+** Check the scheduling status
+   #+BEGIN_SRC sh
+   kubectl describe pod -l app=lb-example-edge
+   #+END_SRC
+** Apply corrective actions
+   Open another terminal and watch the cluster status
+   #+BEGIN_SRC sh
+   kubectl get pod -o wide -w
+   #+END_SRC
+   Mark a node with a label =region=EDGE= and look at the other terminal
+   #+BEGIN_SRC sh
+   kubectl label node $USER-worker region=EDGE
+   #+END_SRC
+
+   Why k8s reacted instantly?
