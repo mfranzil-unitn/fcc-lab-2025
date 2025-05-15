@@ -83,3 +83,8 @@ relative to the specific exercise.
 - [[file:e37][Exercise 37 - Volumes]]
 - [[file:e38][Exercise 38 - Namespaces]]
 - [[file:e39][Exercise 39 - Pod placement]]
+* Lab08 - Kubernetes advanced (optional)
+- [[file:e40][Exercise 40 - Install k8s Dashboard]]
+- [[file:e41][Exercise 41 - Install Helm]]
+- [[file:e42][Exercise 42 - NGINX Ingress Controller]]
+- [[file:e43][Exercise 43 - Ingress resource usage]]

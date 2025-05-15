@@ -1,0 +1,46 @@
+* Exercise 40 - Install k8s Dashboard
+  - Description :: With the help of the official [[https://github.com/kubernetes/dashboard][k8s Dashboard repository]] install the GUI on your cluster, access to it and perform some operations.
+    
+* Solutions and Instructions
+  Clear everything
+  #+BEGIN_SRC sh
+  kubectl delete all --all
+  #+END_SRC
+
+  Install the dashboard
+  #+BEGIN_SRC sh
+  kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.2.0/aio/deploy/recommended.yaml
+  #+END_SRC
+
+  Create a user, see [[https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md][this guide]] for more details
+  #+BEGIN_SRC sh
+  kubectl create -f dashboard-sample-user.yaml
+  #+END_SRC
+
+  Get a valid token, keep note of it
+  #+BEGIN_SRC sh
+    kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"    
+  #+END_SRC
+
+  Enable access to the dashboard using =kubectl proxy=
+  #+BEGIN_SRC sh
+  kubectl proxy &
+  #+END_SRC
+
+  Access the dashboard using your browser (remember to set the SSH socks tunnel)
+  #+BEGIN_EXAMPLE
+  open http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+  #+END_EXAMPLE
+
+  Paste the token into "Enter token" field on login screen
+
+  Now, try to explore the dashboard and create some new workload from it, for example:
+  1) Create from the terminal and check the Dashboard
+     #+BEGIN_SRC sh
+     kubectl create deploy --image=jpetazzo/clock clock --replicas=5
+     #+END_SRC
+     Inspect the Pod logs from the dashboard UI
+
+  2) Deploy the example of exercise =e26= using =lb-example.yaml= from the dasboard
+
+  3) Create some workload using the dashboard form

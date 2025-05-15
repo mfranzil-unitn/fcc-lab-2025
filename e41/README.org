@@ -1,0 +1,56 @@
+* Exercise 41 - Helm installation
+  - Description :: Install Helm and practice with basic commands
+* Solutions and Instructions
+
+  *Please note:* If you are in a group, commands marked with * *must*
+  be done by one member only
+
+  Install Helm (*)
+  #+BEGIN_SRC sh
+  cd $HOME
+  curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+  chmod 700 get_helm.sh
+  ./get_helm.sh
+  #+END_SRC
+
+  Verify Helm installation
+  #+BEGIN_SRC sh
+  helm version
+  #+END_SRC
+
+  Add a repo
+  #+BEGIN_SRC sh
+  helm repo add stable https://charts.helm.sh/stable
+  #+END_SRC
+
+  Search for charts in the repo
+  #+BEGIN_SRC sh
+  helm search repo stable
+  #+END_SRC
+
+  Update the repo
+  #+BEGIN_SRC sh
+  helm repo update
+  #+END_SRC
+
+  Install a chart
+  #+BEGIN_SRC sh
+  helm install $USER-mysql stable/mysql
+  #+END_SRC
+
+  List all installed charts
+  #+BEGIN_SRC sh
+  helm list
+  #+END_SRC
+
+  Check status of a chart
+  #+BEGIN_SRC sh
+  helm status $USER-mysql
+  kubectl get pod
+  #+END_SRC
+
+  Uninstall a chart
+  #+BEGIN_SRC sh
+  helm uninstall $USER-mysql
+  kubectl get pod
+  #+END_SRC

@@ -1,0 +1,35 @@
+* Exercise 42 - NGINX Ingress Controller
+  - Description :: Install the NGINX Ingress Controller in your kind cluster.
+* Solutions and Instructions
+  Free up some resources
+  #+BEGIN_SRC sh
+  kubectl delete all --all
+  #+END_SRC
+
+  Install the NGINX Ingress controller
+  #+BEGIN_SRC sh
+  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/kind/deploy.yaml
+  #+END_SRC
+
+  Enable a node where the NGINX Ingress controller should run
+  #+BEGIN_SRC sh
+  kubectl label node $USER-control-plane ingress-ready=true
+  #+END_SRC
+
+  Wait for the Ingress Controller to be ready
+  #+BEGIN_SRC sh
+  kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=30s
+  #+END_SRC
+
+  Check the controller is running
+  #+BEGIN_SRC sh
+  kubectl get pod -n ingress-nginx
+  #+END_SRC
+
+  Check events in the controller creation
+  #+BEGIN_SRC sh
+  kubectl describe pod -l app.kubernetes.io/name=ingress-nginx -n ingress-nginx
+  #+END_SRC

@@ -1,0 +1,44 @@
+* Exercise 43 - Ingress resource usage
+  - Description :: Create two services which prints different
+    strings. Expose them via two different Services and finally create
+    an Ingress rule that forward the traffic to the right Pod
+    depending on the HTTP path.
+* Solutions and Instructions
+  Free-up the cluster resources
+  #+BEGIN_SRC sh
+  kubectl delete all --all
+  #+END_SRC
+
+  Inspect and install the =foo= pod, see manifest [[file:foo.yaml][here]]
+  #+BEGIN_SRC sh
+  kubectl create -f foo.yaml
+  #+END_SRC
+
+  Inspect and install the =bar= pod, see manifest [[file:bar.yaml][here]]
+  #+BEGIN_SRC sh
+  kubectl create -f bar.yaml
+  #+END_SRC
+
+  Inspect and install the =Ingress= resource, see manifest [[file:ingress.yaml][here]]
+  #+BEGIN_SRC sh
+  kubectl create -f ingress.yaml
+  #+END_SRC
+
+  Check the resources are deployed
+  #+BEGIN_SRC sh
+  kubectl get pod -o wide
+  kubectl get svc
+  kubectl get ingress
+  #+END_SRC
+
+  Get the master IP
+  #+BEGIN_SRC sh
+  MASTER_IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $USER-control-plane`
+  #+END_SRC
+
+  Check the =Ingress= rules are working as expected
+  #+BEGIN_SRC sh
+  curl http://$MASTER_IP/foo
+  curl http://$MASTER_IP/bar
+  curl http://$MASTER_IP/noo
+  #+END_SRC
