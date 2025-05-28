@@ -1,0 +1,20 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-gvisor
+  name: nginx-gvisor
+spec:
+  selector:
+    matchLabels:
+      app: nginx-gvisor
+  template:
+    metadata:
+      labels:
+        app: nginx-gvisor
+    spec:
+      runtimeClassName: runsc
+      containers:
+        - image: nginx
+          name: nginx

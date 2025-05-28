@@ -1,0 +1,92 @@
+* Exercise 48 - Installing gVisor and test distinct runtimes
+  - Description :: Install gVisor in the KinD cluster and verify it is working by checking the kernel versions in distinct containers.
+1. Install gVisor
+2. Configure a second Runtime class
+3. Check the difference between two images using distinct runtime classes
+
+* Solutions and Instructions
+
+In this lab, we will use a series of files to install and configure the gVisor runtime on the Kubernetes cluster.
+
+** Create the new node image
+
+    We need to create a new KinD node image and install the gVisor on it. In the folder you will find the =Dockerfile= below, which will be used to create this new image.
+
+    #+BEGIN_SRC Dockerfile
+FROM kindest/node:v1.32.0
+
+RUN echo "Installing gVisor binaries ..." \
+    && set -e \
+    && ARCH=$(uname -m) \
+    && URL=https://storage.googleapis.com/gvisor/releases/release/latest/${ARCH} \
+    && curl -sSL --retry 5 --output runsc "${URL}/runsc" \
+    && curl -sSL --retry 5 --output runsc.sha512 "${URL}/runsc.sha512" \
+    && curl -sSL --retry 5 --output containerd-shim-runsc-v1 "${URL}/containerd-shim-runsc-v1" \
+    && curl -sSL --retry 5 --output containerd-shim-runsc-v1.sha512 "${URL}/containerd-shim-runsc-v1.sha512" \
+    && sha512sum -c runsc.sha512 -c containerd-shim-runsc-v1.sha512 \
+    && rm -f *.sha512 \
+    && chmod a+rx runsc containerd-shim-runsc-v1 \
+    && mv runsc containerd-shim-runsc-v1 /usr/local/bin 
+    #+END_SRC
+
+Run the docker build command to generate the new image based on the =Dockerfile=
+
+    #+BEGIN_SRC sh
+    docker build . -t node-runsc:v.1.29.2
+    #+END_SRC
+
+** Recreate the cluster with the new image and configuration
+
+Now, we need to recreate the cluster with the new node image
+
+    #+BEGIN_SRC sh
+    kind delete cluster
+    kind create cluster --config kind-cluster.yaml --image node-runsc:v.1.29.2
+    #+END_SRC
+
+Enter in the control-plane node from KinD to check if the configuration was applied.
+
+    #+BEGIN_SRC sh
+    docker exec -it kind-control-plane bash
+    #+END_SRC
+
+We can check it, by looking on the containerd configuration file
+
+    #+BEGIN_SRC sh
+    cat /etc/containerd/configuration.toml | grep runsc
+    #+END_SRC
+
+** Add the runtime class in the cluster
+
+Now, we need to add the runtime class object
+
+    #+BEGIN_SRC sh
+    kubectl apply -f runtime-class-runsc.yaml
+    #+END_SRC
+
+** Test it creating distinct deployments
+
+We will create a deployment using the default runtime class and another one with the =runsc=
+
+    #+BEGIN_SRC sh
+    kubectl apply -f nginx.yaml 
+    kubectl apply -f nginx-runsc.yaml 
+    #+END_SRC
+
+Check the pod names
+
+    #+BEGIN_SRC sh
+kubectl get pods
+
+NAME                                      READY   STATUS    RESTARTS   AGE
+nginx-7c5ddbdf54-bvzck                    1/1     Running   0          70m
+nginx-gvisor-7bc97cdf75-gw94x             1/1     Running   0          77m
+    #+END_SRC
+
+Execute the command =uname -a= inside the container and check the distinct versions between them
+
+    #+BEGIN_SRC sh
+    kubectl exec nginx-7c5ddbdf54-bvzck -- uname -a
+    kubectl exec nginx-gvisor-7bc97cdf75-gw94x -- uname -a
+    #+END_SRC
+

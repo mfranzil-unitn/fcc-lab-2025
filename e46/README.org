@@ -1,0 +1,142 @@
+* Exercise 46 - Playing with Network Policies
+- Description :: Using Network Policies to manage the communication between containers
+  1. Recreate the cluster in KinD, adding Calico
+  2. Create a =deny-all= network policy
+  3. Create a custom policy between two namespaces
+
+* Solutions and Instructions
+
+** Install Calico as CNI
+
+Recreate the cluster, removing the default CNI and setting the ip range to =192.168.0.0/16= (mandatory to Calico)
+
+#+BEGIN_SRC sh
+kind delete cluster
+kind create cluster --config=kind-cluster.yaml
+#+END_SRC
+
+Install Calico custom resources and operator. You can check the last calico version in [[https://docs.tigera.io/calico/latest/getting-started/kubernetes/quickstart][Calico Quickstart]]
+
+#+BEGIN_SRC sh
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/tigera-operator.yaml
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/custom-resources.yaml
+#+END_SRC
+
+Verify the installation by checking the status of Calico pods and nodes
+
+#+BEGIN_SRC sh
+kubectl get pods -A
+NAMESPACE            NAME                                         READY   STATUS    RESTARTS   AGE
+calico-apiserver     calico-apiserver-bddd7587f-62w4v             1/1     Running   0          39s
+calico-apiserver     calico-apiserver-bddd7587f-ksgzs             1/1     Running   0          39s
+calico-system        calico-kube-controllers-559b98f7b8-twr67     1/1     Running   0          79s
+calico-system        calico-node-mpv7n                            1/1     Running   0          79s
+calico-system        calico-typha-cfbf66776-5vfqg                 1/1     Running   0          79s
+calico-system        csi-node-driver-d7qgk                        2/2     Running   0          79s
+kube-system          coredns-76f75df574-7cnmz                     1/1     Running   0          84s
+kube-system          coredns-76f75df574-m9kkc                     1/1     Running   0          84s
+kube-system          etcd-kind-control-plane                      1/1     Running   0          99s
+kube-system          kube-apiserver-kind-control-plane            1/1     Running   0          98s
+kube-system          kube-controller-manager-kind-control-plane   1/1     Running   0          98s
+kube-system          kube-proxy-qvs29                             1/1     Running   0          85s
+kube-system          kube-scheduler-kind-control-plane            1/1     Running   0          98s
+local-path-storage   local-path-provisioner-7577fdbbfb-qbhns      1/1     Running   0          84s
+tigera-operator      tigera-operator-6bfc79cb9c-2mx82             1/1     Running   0          84s
+#+END_SRC
+
+#+BEGIN_SRC sh
+kubectl get nodes
+NAME                 STATUS   ROLES           AGE    VERSION
+kind-control-plane   Ready    control-plane   2m5s   v1.32.0
+#+END_SRC
+
+** Create namespaces
+
+Create two Kubernetes namespaces, =red= and =blue=
+
+#+BEGIN_SRC sh
+kubectl create namespace red
+namespace/red created
+#+END_SRC
+
+#+BEGIN_SRC sh
+kubectl create namespace blue
+namespace/blue created
+#+END_SRC
+
+** Deploy a Nginx Server
+
+#+BEGIN_SRC sh
+kubectl run web --image=nginx --port=80 --labels="app=web" --expose --namespace blue
+#+END_SRC
+
+** Access the web server from another namespace
+
+Create a ephemerous container to access the web server
+
+#+BEGIN_SRC sh
+kubectl run --rm -it --image=alpine --namespace red test-$RANDOM -- sh
+#+END_SRC
+
+Inside of the container shell, run the =wget= command
+
+#+BEGIN_SRC sh
+wget -qO- http://web.blue
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+#+END_SRC
+
+** Apply Deny-All Network Policy
+
+In another terminal
+
+#+BEGIN_SRC sh
+kubectl apply -f deny-all.yaml 
+#+END_SRC
+
+Try to access again
+
+** Apply Custom Policy (Allow Red to Web)
+
+Delete the existing deny-all network policy and apply a custom network policy that only allows communication from pods in the =red= namespace to the web server in the =blue= namespace
+
+#+BEGIN_SRC sh
+kubectl delete -f deny-all.yaml
+kubectl apply -f allow-red-to-web.yaml
+#+END_SRC
+
+Try to access again http://web.blue (now it will work)
+
+Access should be allowed only from pods in the =red= namespace. Now let's try to access the web server from another namespace
+
+#+BEGIN_SRC sh
+kubectl run --rm -it --image=alpine --namespace blue test-$RANDOM -- sh
+#+END_SRC
+
+Try to access again the domain http://web.blue (it will block even from the =blue= namespace)
+
+** Additional Information
+
+More information about network policies could be checked in the official documentation [[https://kubernetes.io/docs/concepts/services-networking/network-policies/][Network Policies]]

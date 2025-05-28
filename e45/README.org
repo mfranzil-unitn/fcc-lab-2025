@@ -1,0 +1,60 @@
+* Exercise 45 - Working with Roles and RoleBindings 
+  - Description :: Create custom roles and bind them to users
+  1. Create a custom role
+  2. Test the differences between distinct RBACs
+
+* Solutions and Instructions
+
+** Check current configuration
+
+Check the current =roles= and =rolebindings= in the namespace
+
+    #+BEGIN_SRC sh
+    kubectl get roles,rolebindings -n limited -o wide
+    #+END_SRC
+
+** Create a new role 
+
+Create a new role to create pods
+
+    #+BEGIN_SRC sh
+    kubectl create role createpod --verb=create --resource=pods -n limited
+    #+END_SRC
+
+Add this role to the user =limited=
+
+    #+BEGIN_SRC sh
+    kubectl create rolebinding createpod --role createpod --user limited -n limited
+    #+END_SRC
+
+Try to create a container with the kubeconfig file created before
+
+    #+BEGIN_SRC sh
+    kubectl --kubeconfig=kubeconfig run nginx --image=nginx -n limited
+    #+END_SRC
+
+After list the pods in the namespace
+
+    #+BEGIN_SRC sh
+    kubectl --kubeconfig=kubeconfig get pods -n limited
+    #+END_SRC
+
+Try to delete it (it will not work)
+
+    #+BEGIN_SRC sh
+    kubectl --kubeconfig=kubeconfig delete pod nginx -n limited
+    #+END_SRC
+
+** Add the delete verb to the role
+
+Let's add this option to the current role, and add in the end the option = - delete= to the verbs
+
+    #+BEGIN_SRC sh
+    kubectl edit role createpod -n limited
+    #+END_SRC
+
+Try again (now it will work)
+
+    #+BEGIN_SRC sh
+    kubectl --kubeconfig=kubeconfig delete pod nginx -n limited
+    #+END_SRC

@@ -88,3 +88,9 @@ relative to the specific exercise.
 - [[file:e41][Exercise 41 - Install Helm]]
 - [[file:e42][Exercise 42 - NGINX Ingress Controller]]
 - [[file:e43][Exercise 43 - Ingress resource usage]]
+* Lab09 - Kubernetes Security 1 (20250528)
+- [[file:e44][Exercise 44 - Create a new user and play with Roles and RoleBindings]]
+- [[file:e45][Exercise 45 - Working with Roles and RoleBindings]] 
+- [[file:e46][Exercise 46 - Playing with Network Policies]] 
+- [[file:e47][Exercise 47 - Using kube-bench to validate the cluster configuration]]
+- [[file:e48][Exercise 48 - Installing gVisor and test distinct runtimes]] 

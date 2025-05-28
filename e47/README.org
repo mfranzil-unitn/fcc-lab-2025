@@ -1,0 +1,88 @@
+* Exercise 47 - Using kube-bench to validate the cluster configuration
+  - Description :: Run kube-bench in the cluster to check the current configuration. After, update one of the options flagged as offending and recreate the KinD cluster.
+  1. Run =kube-bench=
+  2. Fix one of the configurations that fails in the first valdiation
+
+* Solutions and Instructions
+
+** Run kube-bench as a kubernetes job to check the current configuration of the cluster
+
+    Run the kube-bench job YAML file directly from the github
+
+    #+BEGIN_SRC sh
+    kubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/main/job.yaml
+    #+END_SRC
+
+    Get the pod name
+
+    #+BEGIN_SRC bash
+    $ kubectl get pods
+    NAME               READY   STATUS      RESTARTS   AGE
+    kube-bench-jqsdj   0/1     Completed   0          2m27s
+    #+END_SRC
+
+    Check the logs inside the file
+
+    #+BEGIN_SRC sh
+    $ kubectl logs kube-bench-jqsdj
+    [INFO] 1 Control Plane Security Configuration
+    [INFO] 1.1 Control Plane Node Configuration Files
+    [PASS] 1.1.1 Ensure that the API server pod specification file permissions are set to 600 or more restrictive (Automated)
+    ...
+    [FAIL] 1.2.16 Ensure that the --profiling argument is set to false (Automated)
+    ...
+    #+END_SRC
+
+    By default, several configuration will be presented as FAIL. That happened because not always the best practices is the default Kubeneretes configuration.
+
+** Now, we will create the KinD configuration to overwrite and correct the item 1.2.16 from the kube-bench report
+
+    #+BEGIN_SRC sh
+cat <<EOF > kind-cluster.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: ClusterConfiguration
+    apiServer:
+        extraArgs:
+          profiling: "false"
+EOF
+    #+END_SRC
+
+** After, unfortunately, with KinD, we need to delete and recreate the cluster passing the new configuration (in a real cluster it is only necessary, change the file and restart the api-server pod)
+
+    #+BEGIN_SRC sh
+    kind delete cluster
+    kind create cluster --config kind-cluster.yaml
+    #+END_SRC
+
+** Now, we can run again the kube-bench, and check if the configuration is now valid.
+
+    Again, doing the same procedure as before
+
+     #+BEGIN_SRC sh
+    kubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/main/job.yaml
+    #+END_SRC
+
+    Get the pod name, remember that each time the pod will have a distinct name
+
+    #+BEGIN_SRC sh
+    $ kubectl get pods
+    NAME               READY   STATUS      RESTARTS   AGE
+    kube-bench-dlx8t   0/1     Completed   0          20s
+    #+END_SRC
+
+    Check the log
+
+    #+BEGIN_SRC sh
+    $ kubectl logs kube-bench-dlx8t
+    [INFO] 1 Control Plane Security Configuration
+    [INFO] 1.1 Control Plane Node Configuration Files
+    [PASS] 1.1.1 Ensure that the API server pod specification file permissions are set to 600 or more restrictive (Automated)
+    ...
+    [PASS] 1.2.16 Ensure that the --profiling argument is set to false (Automated)
+    ...
+    #+END_SRC

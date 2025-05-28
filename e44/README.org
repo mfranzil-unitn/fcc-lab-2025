@@ -1,0 +1,116 @@
+* Exercise 44 - Create a new user and play with Roles and RoleBindings
+  - Description :: Inspect, create and execute commands with distinct users and roles
+  1. Create a Role and a RoleBinding
+  2. Create a new user 
+  3. Access the cluster with this new user
+
+* Solutions and Instructions
+
+** Check the current User
+
+   #+BEGIN_SRC sh
+   kubectl auth whoami
+   #+END_SRC
+
+** Create a new namespace
+
+Create a new Kubernetes namespace named =limited= where we will set the RBAC
+
+   #+BEGIN_SRC sh
+   kubectl create namespace limited
+   #+END_SRC
+
+** Create a RoleBinding
+
+Since we do not need to create the user first, we can alreadt link it to a specific default role ( =view=, =edit=, =admin=, =cluster-admin= ) in the namespace
+
+   #+BEGIN_SRC sh
+   kubectl create rolebinding onlyview --clusterrole=view --user=limited -n limited
+   #+END_SRC
+
+Check if the role is working with the command =auth can-i= (you can do that even without create the user certificate and key).
+
+   #+BEGIN_SRC sh
+   kubectl auth can-i list pods --as=limited -n limited
+   kubectl auth can-i list pods --as=limited -n default
+   kubectl auth can-i create secrets --as=limited -n limited
+   #+END_SRC
+
+Check the differences with the actual user account
+
+   #+BEGIN_SRC sh
+   kubectl auth can-i create secrets
+   #+END_SRC
+
+** Create a new user with it certificate
+
+First, create the key and the certificate request
+   
+   #+BEGIN_SRC sh
+   openssl genrsa -out limited.key 2048
+   openssl req -new -key limited.key -out limited.csr -subj "/CN=limited"
+   #+END_SRC
+
+Add the request to the Kubernetes certificate manager
+
+   #+BEGIN_SRC sh
+cat <<EOF | kubectl apply -f -
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: limited
+spec:
+  request: $(cat limited.csr | base64 | tr -d "\n")
+  signerName: kubernetes.io/kube-apiserver-client
+  usages:
+  - client auth
+EOF
+   #+END_SRC
+
+You can verify if the certificate was correct added
+   
+   #+BEGIN_SRC sh
+   kubectl get csr
+   #+END_SRC
+
+Aprrove the certificate
+
+   #+BEGIN_SRC sh
+   kubectl certificate approve limited
+   #+END_SRC
+
+Save the certificate in a file
+
+   #+BEGIN_SRC sh
+   kubectl get csr limited -o jsonpath='{.status.certificate}'| base64 -d > limited.crt
+   #+END_SRC
+
+Finally create a new context and import the new user to the cluster
+
+   #+BEGIN_SRC sh
+   kubectl config set-credentials limited --client-key=limited.key --client-certificate=limited.crt --embed-certs=true
+   kubectl config set-context limited --cluster=kind-kind --user=limited --namespace=limited
+   kubectl config use-context limited
+   #+END_SRC
+
+Save the new configuration with the new user in a new file
+   
+   #+BEGIN_SRC sh
+   kubectl config view --minify --raw > kubeconfig
+   #+END_SRC
+
+Return to the default context
+
+   #+BEGIN_SRC sh
+   kubectl config use-context kind-kind
+   #+END_SRC
+
+Test the differences between the default user and the =limited= user
+
+   #+BEGIN_SRC sh
+   kubectl --kubeconfig=kubeconfig get pods -n limited
+   kubectl --kubeconfig=kubeconfig get pods -n default
+   kubectl --kubeconfig=kubeconfig run nginx --image=nginx -n limited
+   kubectl get pods -n limited
+   kubectl get pods -n default
+   #+END_SRC
