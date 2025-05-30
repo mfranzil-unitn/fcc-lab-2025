@@ -94,3 +94,7 @@ relative to the specific exercise.
 - [[file:e46][Exercise 46 - Playing with Network Policies]] 
 - [[file:e47][Exercise 47 - Using kube-bench to validate the cluster configuration]]
 - [[file:e48][Exercise 48 - Installing gVisor and test distinct runtimes]] 
+* Lab10 - Kubernetes Security 2 (20250604)
+- [[file:e49][Exercise 49 - Use OPA to secure Kubernetes]]
+- [[file:e50][Exercise 50 - Use audit logs to monitor the cluster]]
+- [[file:e51][Exercise 51 - Using Falco to detect incidents in a Kubernetes cluster]] (optional)

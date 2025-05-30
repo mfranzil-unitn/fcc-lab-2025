@@ -1,0 +1,202 @@
+* Exercise 49 - Use OPA to secure Kubernetes
+- Description :: OPA is a general-purpose policy engine that allows policy enforcement
+  across the whole cluster. OPA uses Rego, a high-level declarative language to
+  define policies.
+  1. Install OPA and Gatekeeper;
+  2. Create a policy that ensures all pods have a label =env=;
+  3. Create a policy that ensures Deployments have at least 3 replicas.
+
+* Solutions and Instructions
+As we have seen during the lecture, OPA requires [[https://open-policy-agent.github.io/gatekeeper/website/][Gatekeeper]] to be installed
+in the cluster. Gatekeeper will function as an admission controller, intercepting
+requests to the API server and validating them against the policies defined in OPA.
+
+** Install OPA and Gatekeeper
+#+BEGIN_SRC sh
+kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/v3.15.0/deploy/gatekeeper.yaml
+#+END_SRC
+
+Verify that Gatekeeper is running:
+#+BEGIN_SRC sh
+kubectl get pods -n gatekeeper-system
+#+END_SRC
+
+** Create a policy that ensures all pods have a label =env=
+
+First, let's write simply the policy in Rego language. Create a file called =pod-env.rego= with the following content:
+#+BEGIN_SRC rego
+  package k8srequiredlabels
+
+  violation[{"msg": msg}] {
+    provided := {label | input.review.object.metadata.labels[label]}
+    required := {"env": "prod"}
+    missing := required - provided
+    count(missing) > 0
+    msg := sprintf("missing required labels: %v", [missing])
+  }
+#+END_SRC
+
+Let's create now a ConstraintTemplate that will use this policy. Create a file called =pod-env-constraint-template.yaml= with the following content:
+#+BEGIN_SRC yaml
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredlabels
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredLabels
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            labels:
+              type: array
+              items:
+                type: string
+  targets:
+   - target: admission.k8s.gatekeeper.sh
+     rego: |
+     [...]
+#+END_SRC
+
+Apply the ConstraintTemplate:
+#+BEGIN_SRC sh
+kubectl apply -f pod-env-constraint-template.yaml
+#+END_SRC
+
+In order to enforce the policy, we need to match the ConstraintTemplate with a Constraint. Create a file called =pod-env-constraint.yaml= with the following content:
+#+BEGIN_SRC yaml
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata:
+  name: require-pod-env
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+#+END_SRC
+
+Apply the Constraint:
+#+BEGIN_SRC sh
+kubectl apply -f pod-env-constraint.yaml
+#+END_SRC
+
+Try to create a Pod without the =env: prod= label:
+#+BEGIN_SRC sh
+kubectl run nginx --image=nginx
+#+END_SRC
+
+You should see an error message like this:
+#+BEGIN_SRC sh
+Error from server (Forbidden): admission webhook "validation.gatekeeper.sh" denied the request: [require-pod-env] missing required labels: {"env"}
+#+END_SRC
+
+Let's correct our mistake and create a Pod with the required label:
+#+BEGIN_SRC sh
+kubectl run nginx --image=nginx --labels=env=prod
+#+END_SRC
+
+Now OPA will be happy and the Pod will be created. If we check the logs, we will find the previous error message, but no errors will be shown for the last Pod creation:
+#+BEGIN_SRC sh
+> k get pods -n gatekeeper-system
+NAME                                             READY   STATUS    RESTARTS      AGE
+gatekeeper-audit-6c9dd6bd4b-cdhgk                1/1     Running   2 (11m ago)   11m
+gatekeeper-controller-manager-7754d7bd4b-hftnb   1/1     Running   0             11m
+gatekeeper-controller-manager-7754d7bd4b-jw5cf   1/1     Running   0             11m
+gatekeeper-controller-manager-7754d7bd4b-w24ls   1/1     Running   0             11m
+> k logs gatekeeper-audit-6c9dd6bd4b-cdhgk -n gatekeeper-system
+[...]
+#+END_SRC
+
+** Create a policy that ensures Deployments have *at least* 3 replicas
+
+Things here are a bit different. We need to create a new Rego policy that will check the number of replicas in a Deployment. Create a file called =deployment-replicas.rego= with the following content:
+#+BEGIN_SRC rego
+package k8srequiredreplicas
+
+object_name = input.review.object.metadata.name
+object_kind = input.review.object.kind
+
+violation[{"msg": msg}] {
+  spec := input.review.object.spec
+  not input_replica_count(spec)
+  msg := sprintf("Deployment %v must have at least 3 replicas", [object_name])
+}
+
+input_replica_count(spec) {
+  spec.replicas >= 3
+}
+#+END_SRC
+
+In theory, such a policy could be specialized to check the number of replicas for any kind of object, but for the sake of simplicity, we will focus only on Deployments
+and three replicas. For example, =input_replica_count= could be a generic function that receives the number of replicas as a parameter.
+
+Create a new ConstraintTemplate that will use this policy. Create a file called =deployment-replicas-constraint-template.yaml= with the following content:
+#+BEGIN_SRC yaml
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredreplicas
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredReplicas
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            replicas:
+              type: integer
+  targets:
+   - target: admission.k8s.gatekeeper.sh
+     rego: |
+     [...]
+#+END_SRC
+
+Create also the Constraint that will enforce the policy. Create a file called =deployment-replicas-constraint.yaml= with the following content:
+
+#+BEGIN_SRC yaml
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredReplicas
+metadata:
+  name: require-deployment-replicas
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+#+END_SRC
+
+Let's create a "wrong" Deployment with only 2 replicas:
+#+BEGIN_SRC sh
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+EOF
+#+END_SRC
+
+Result:
+#+BEGIN_SRC sh
+Error from server (Forbidden): error when creating "STDIN": admission webhook "validation.gatekeeper.sh" denied the request: [require-deployment-replicas] Deployment nginx must have at least 3 replicas
+#+END_SRC
+
+Try setting the number of replicas to 3 (or 4, or 5) and apply the Deployment again. 

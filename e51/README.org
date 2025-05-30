@@ -1,0 +1,127 @@
+* Exercise 51 - Using Falco to detect incidents in a Kubernetes cluster
+- Description :: Falco is a runtime security tool that can be used to 
+  monitor a Kubernetes cluster for unusual activity. In this exercise,
+  we will deploy Falco in a Kubernetes cluster and use it to detect
+  incidents in the cluster.
+  1. Install Falco in the Kubernetes cluster.
+  2. Write a Falco rule that detects if some attempts to visit
+     the =/etc/passwd= file in a pod.
+  3. Set up Falco to crunch audit logs and detect when a ClusterRole
+     with write privileges is created.
+
+This exercise is completely optional as it requires a Kubernetes cluster
+not installed with kind.
+
+* Solutions and Instructions
+
+** Install Falco in the Kubernetes cluster
+
+Falco can be deployed in Kubernetes using either a Helm chart or a manual [[https://github.com/falcosecurity/deploy-kubernetes/tree/main/kubernetes/falco/templates][set of manifest files]].
+
+To install Falco using the Helm chart, run the following commands:
+
+#+BEGIN_SRC sh
+helm repo add falcosecurity https://falcosecurity.github.io/charts
+helm repo update
+helm install falco falcosecurity/falco \
+    --create-namespace \
+    --namespace falco
+#+END_SRC
+
+This will install Falco in the =falco= namespace in the Kubernetes cluster. Since the
+kind cluster was probably already recreated multiple times, make sure that Helm
+is installed using the instructions from previous exercises.
+
+** Write a Falco rule that detects if some attempts to visit the =/etc/passwd= file in a pod
+
+Falco rules are written in a custom language that essentially /queries/ the events
+that Falco receives, and triggers an alert if the query matches. Being very
+complicated, we will not write a rule from scratch, but instead use a pre-existing
+rule that detects when a pod attempts to spawn a shell in a container.
+
+Such rule is available from the documentation:
+
+#+BEGIN_SRC yaml
+- macro: container
+  condition: container.id != host
+
+- macro: spawned_process
+  condition: evt.type = execve and evt.dir=<
+
+- rule: run_shell_in_container
+  desc: a shell was spawned by a non-shell program in a container. Container entrypoints are excluded.
+  condition: container and proc.name = bash and spawned_process and proc.pname exists and not proc.pname in (bash, docker)
+  output: "Shell spawned in a container other than entrypoint (user=%user.name container_id=%container.id container_name=%container.name shell=%proc.name parent=%proc.pname cmdline=%proc.cmdline)"
+  priority: WARNING
+#+END_SRC
+
+Let's change the macro =spawned_process= to detect when a process tries to access
+the =/etc/passwd= file:
+
+#+BEGIN_SRC yaml
+  - macro: access_etc_passwd 
+    condition: syscall.type = openat and fd.name = /etc/passwd
+
+  - rule: access_etc_passwd
+    desc: a process tried to access the /etc/passwd file
+    condition: container and access_etc_passwd 
+    output: "Process tried to access /etc/passwd (user=%user.name container_id=%container.id container_name=%container.name process=%proc.name)"
+    priority: WARNING
+#+END_SRC
+
+This rule will trigger an alert whenever a process in a container tries to access
+the =/etc/passwd= file. To make it work, we can apply it to the Falco configuration
+by adding it to any of the config maps that Falco uses, defined in =/etc/falco/falco.yaml=.
+#+BEGIN_SRC yaml
+rules_file:
+  - /etc/falco/falco_rules.yaml
+  - /etc/falco/falco_rules.local.yaml
+  - /etc/falco/rules.d
+#+END_SRC
+
+After adding the rule to the config map, we can restart the Falco pod to apply the
+new configuration.
+
+** Set up Falco to crunch audit logs and detect when a ClusterRole with write privileges is created
+
+Documentation: [[https://github.com/falcosecurity/plugins/blob/main/plugins/k8saudit/README.md][Falco K8s Audit Plugin]], [[https://github.com/falcosecurity/plugins/blob/main/plugins/k8saudit/rules/k8s_audit_rules.yaml][K8s Audit Rules]]
+
+Falco supports several plugins that can be used to extend its functionality. One of
+the plugins is the audit log plugin, which can be used to monitor Kubernetes audit
+logs for specific events.
+
+The plugin adds a plethora of new rules and configurations to Falco, which can be
+used to detect various events in the Kubernetes cluster. To enable the audit log
+plugin, we need to add the following configuration to the Falco configuration file:
+
+#+BEGIN_SRC yaml
+plugins:
+  - name: k8saudit
+    library_path: libk8saudit.so
+    init_config:
+      sslCertificate: /etc/falco/falco.pem
+    open_params: /var/log/kubernetes/audit/audit.log 
+  - name: json
+    library_path: libjson.so
+    init_config: ""
+
+load_plugins: [k8saudit, json]
+#+END_SRC
+
+This configuration will enable the audit log plugin and configure it to listen on
+the Kubernetes audit log file =/var/log/kubernetes/audit/audit.log=. The plugin
+is in theory devised to use Webhooks to receive audit logs, but it can also read
+them from a file for testing purposes.
+
+After enabling the plugin, we can use the pre-existing rules that come with the
+plugin to detect when a ClusterRole with write privileges is created. The rule
+is already defined in the plugin:
+#+BEGIN_SRC yaml
+- rule: ClusterRole With Write Privileges Created
+  desc: Detect any attempt to create a Role/ClusterRole that can perform write-related actions
+  condition: kevt and (role or clusterrole) and kcreate and writable_verbs
+  output: Created Role/ClusterRole with write privileges (user=%ka.user.name role=%ka.target.name resource=%ka.target.resource rules=%ka.req.role.rules)
+  priority: NOTICE
+  source: k8s_audit
+  tags: [k8s]
+#+END_SRC

@@ -1,0 +1,20 @@
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+  - level: Metadata
+    resources:
+      - group: ""
+        resources: ["configmaps", "secrets", "services"]
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources: ["pods", "namespaces"]
+    omitStages:
+      - "RequestReceived"
+  - level: None
+    users: ["kube-apiserver"]
+    resources:
+      - group: ""
+        resources: ["events"]
+  - level: Request
+    verbs: ["create", "update", "delete"]

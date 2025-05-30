@@ -1,0 +1,176 @@
+* Exercise 50 - Use audit logs to monitor the cluster
+- Description :: Auditing enables a Kubernetes cluster to emit
+  detailed event logs for all requests made to the API server.
+  These logs can be used to monitor the cluster for security
+  purposes, and to understand how the cluster is being used.
+  1. Create a policy file that enables logging at the:
+     - =Metadata= level for =ConfigMaps=, =Secrets=, and =Services=.
+     - =RequestResponse= level for =Pods= and =Namespaces=, skipping the =RequestReceived= stage.
+     - =None= level for =Events=, if made by the =kube-apiserver= user.
+     - =Request= level for all other resources, but only for =create=, =update=, and =delete= operations.
+  2. Enable auditing on the API server.
+  3. Inspect the audit logs and assess their contents. Can you find the actions you performed?
+     What is the difference between the various levels of logging?
+
+* Solutions and Instructions
+
+** Create an audit policy file
+
+Kubernetes [[https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/][Auditing]] is a key feature for monitoring
+the cluster. Unfortunately, it is not enabled by default and the steps to do so vary
+between different Kubernetes distributions. However, what is common is that you need
+a policy file that specifies the level of detail to be logged.
+
+Create a file called =audit-policy.yaml= with the following content:
+#+BEGIN_SRC yaml
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+  - level: Metadata
+    resources:
+      - group: ""
+        resources: ["configmaps", "secrets", "services"]
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources: ["pods", "namespaces"]
+    omitStages:
+      - "RequestReceived"
+  - level: None
+    users: ["kube-apiserver"]
+    resources:
+      - group: ""
+        resources: ["events"]
+  - level: Request
+    verbs: ["create", "update", "delete"]
+#+END_SRC
+
+As asked, this policy file specifies that:
+- =Metadata= level logging is enabled for =ConfigMaps=, =Secrets=, and =Services=.
+- =RequestResponse= level logging is enabled for =Pods= and =Namespaces=, but the =RequestReceived= stage is omitted.
+- =None= level logging is enabled for =Events= if they are made by the =kube-apiserver= user.
+- =Request= level logging is enabled for all other resources, but only for =create=, =update=, and =delete= operations.
+
+** Enable auditing on the API server
+
+To enable auditing on the API server, you need to pass the =--audit-log-path=
+and =--audit-policy-file= flags to the =kube-apiserver= process. In kind, you
+can do this at the time of cluster creation by supplying a =kind-audit.yaml=
+configuration file that specifies these flags, as well as the mounts for the
+policy file and the audit log directory.
+
+Let's create the =kind-audit.yaml= file:
+
+#+BEGIN_SRC yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: ClusterConfiguration
+    apiServer:
+      extraArgs:
+        audit-log-path: /var/log/kubernetes/kube-apiserver-audit.log
+        audit-policy-file: /etc/kubernetes/policies/audit-policy.yaml
+      extraVolumes:
+        - name: audit-policies
+          hostPath: /etc/kubernetes/policies
+          mountPath: /etc/kubernetes/policies
+          readOnly: true
+          pathType: "DirectoryOrCreate"
+        - name: "audit-logs"
+          hostPath: "/var/log/kubernetes"
+          mountPath: "/var/log/kubernetes"
+          readOnly: false
+          pathType: DirectoryOrCreate
+  extraMounts:
+  - hostPath: ./audit-policy.yaml
+    containerPath: /etc/kubernetes/policies/audit-policy.yaml
+    readOnly: true
+  - hostPath: ./audit-logs
+    containerPath: /var/log/kubernetes
+    readOnly: false
+#+END_SRC
+
+We can now proceed as usual to create the cluster:
+
+#+BEGIN_SRC sh 
+kind create cluster --config kind-audit.yaml
+#+END_SRC
+
+Let's make some actions on the cluster to generate some audit logs:
+#+BEGIN_SRC sh
+kubectl create namespace my-test
+kubectl create secret generic my-secret --from-literal=password=hypersecret --namespace=test
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+  namespace: my-test
+data:
+  my-key: my-value
+EOF
+#+END_SRC
+
+** Inspect the audit logs
+
+*WARNING*: the audit logs will grow quickly and can consume a lot of disk space,
+even more so considering the limited resources in the VM. Make sure to clean them
+up after you are done inspecting them and to tear down the cluster to free up the
+resources.
+
+The audit logs are stored in the file =~/audit-logs/kube-apiserver-audit.log=.
+At first glance, the log might appear horrifyingly verbose, but it is structured
+and can be parsed with the help of tools like =jq=.
+
+For example, let's start by filtering the logs to only show the actions regarding
+the =my-test= namespace. This can be done with a simple =grep my-test $LOGFILE= command.
+
+Let's inspect the first line, (in theory) the action that created the =test= namespace:
+#+BEGIN_SRC sh
+grep my-test ~/audit-logs/kube-apiserver-audit.log | head -n 1 | jq
+#+END_SRC
+
+Let's inspect some of the parameters presented in this huge JSON.
+- =requestURI= is the URI of the request, essentially the path to the resource.
+  In our case, it is =/api/v1/namespaces= followed by some query parameters. We
+  notice =fieldValidation=Strict=, that [[https://kubernetes.io/blog/2023/04/24/openapi-v3-field-validation-ga/#server-side-field-validation][indicates the API server is validating the request]].
+- =verb= is the HTTP verb used in the request. In our case, it is =create=.
+- =userAgent= represents the client that made the request, not unlike how =User-Agent=
+  works in HTTP. In our case, it is =kubectl/v1.29.4 (linux/amd64) kubernetes/55019c8=.
+- =requestObject= and =responseObject= are the request and response objects, respectively.
+  They are quite verbose and contain the full resource definition. In our case, we
+  explictly asked for them in the policy file.
+- =annotations= contains the annotations of the resource. It may contain
+  user-generated and cluster-generated metadata. You will often find =RBAC=
+  annotations here: for example, here we have:
+  #+BEGIN_SRC json
+  "annotations": {
+    "authorization.k8s.io/decision": "allow",
+    "authorization.k8s.io/reason": "RBAC: allowed by ClusterRoleBinding \"kubeadm:cluster-admins\" of ClusterRole \"cluster-admin\" to Group \"kubeadm:cluster-admins\""
+  }
+  #+END_SRC
+
+Let's now inspect the action that created the =my-config= secret:
+#+BEGIN_SRC sh
+grep my-config ~/audit-logs/kube-apiserver-audit.log | head -n 1 | jq
+#+END_SRC
+
+Confused? Rightfully so! In this case, the first request made is actually
+a =get= to the =my-config= secret. This is because the =kubectl= client
+wants to be sure the resource does not exist before creating it. The =create=
+operation is the second request made. This is a good example of how the audit
+logs can be used to understand the behavior of the =kubectl= client.
+
+Since we are logging at the =Metadata= level here, no information about the
+secret's data is present in the logs. This is a good thing, as it would be
+a security issue to log sensitive data.
+
+** Conclusion
+
+A plethora of information is available in the audit logs, and it is up to you to
+decide what to do with it. You can use it to monitor the cluster, to understand
+how it is being used, and to detect security issues. In the following exercise,
+we will feed this information to Falco to detect security incidents.
